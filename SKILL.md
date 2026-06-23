@@ -91,8 +91,10 @@ ziwei-bazi-reading/
 │   ├── gen_liunian_html.js    # 八字运势交互式HTML(大运列表+流年十维度)
 │   ├── gen_ziwei_liunian_html.js # 紫微运势交互式HTML(大限+流年宫象)
 │   ├── gen_bazi_full_html.js      # 八字【完整命书】HTML(命盘+藏干+纳音+五行+喜用+刑冲克害+神煞+LLM解读注入+大运+流年+折线图)
-│   ├── gen_ziwei_full_html.js     # 紫微【完整命书】HTML(环形十二宫盘面+每宫解析+LLM解读注入+大限+流年+折线图)
-│   ├── vendor/           # iztro+tyme4ts+自研层 内置(离线~5.6MB,见 vendor/README.md)
+│   ├── gen_ziwei_full_html.js     # 紫微【完整命书】HTML(环形盘面+格局成格/凶格卡+疾厄脏腑卡+LLM解读注入+大限+流年)
+│   ├── gen_heming_ziwei_html.js  # 紫微合盘HTML(双方关键宫联参+太阳太阴+四化互参+LLM五步法)
+│   ├── gen_heming_bazi_html.js   # 八字合盘HTML(双方四柱+日主十神+纳音生克+神煞对比+LLM合婚)
+│   ├── vendor/           # iztro+tyme4ts+自研层+运行时依赖 内置(离线,见 vendor/README.md)
 │   └── README.md
 └── data/               # 静态查表（藏干/四化/节气，两套共用）
     ├── canggan.json

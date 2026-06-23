@@ -116,14 +116,32 @@ const centerHtml = `<div class="center">
 </div>`;
 
 const interpSec = (title, arr) => (arr && arr.length) ? `<div class="ip-card"><h4>${title}</h4>${arr.map(x=>`<p>${esc(x)}</p>`).join('')}</div>` : '';
+// ① 格局结构化：interp['格局'] 支持字符串(向后兼容)或 {name,type:'good'|'caution',desc}
+const interpGeju = (arr) => {
+  if (!arr || !arr.length) return '';
+  const objs = arr.map(x => typeof x === 'string' ? {name:x, type:'good', desc:''} : x);
+  const good = objs.filter(o => o.type !== 'caution' && o.type !== 'bad');
+  const bad = objs.filter(o => o.type === 'caution' || o.type === 'bad');
+  const grp = (list, cls, icon, title) => list.length ? `<div class="geju-group ${cls}"><div class="geju-head">${icon} ${title}</div>${list.map(o=>`<div class="geju-item"><b>${esc(o.name)}</b>${o.desc?`：<span>${esc(o.desc)}</span>`:''}</div>`).join('')}</div>` : '';
+  return `<div class="ip-card geju"><h4>核心格局</h4>${grp(good,'gg-good','⭐','成格')}${grp(bad,'gg-bad','⚠','凶格警示')}</div>`;
+};
+// ② 疾厄脏腑定位（子午流注：地支宫→脏腑，脚本固定映射，不依赖 LLM）
+const ZANGFU = {子:'膀胱/泌尿',丑:'肝',寅:'胆/呼吸道',卯:'肝胆',辰:'脾胃',巳:'心/小肠',午:'心、头脑',未:'脾胃',申:'肺/大肠',酉:'肾',戌:'脾胃/大肠',亥:'肾/膀胱/生殖'};
+const jieGong = a.palaces.find(p => p.name === '疾厄');
+const jieZhi = jieGong ? jieGong.earthlyBranch : '';
+const jieAdj = jieGong ? (jieGong.adjectiveStars||[]).map(s=>typeof s==='string'?{name:s}:s) : [];
+const jieAllStars = jieGong ? [...(jieGong.majorStars||[]),...(jieGong.minorStars||[]),...jieAdj] : [];
+const jieRisk = [...jieAllStars.filter(s=>SHA_SET.has(s.name)).map(s=>s.name), ...(jieGong?(jieGong.majorStars||[]):[]).filter(s=>s.mutagen==='忌').map(s=>s.name+'化忌')];
+const zangfuCard = jieZhi ? `<div class="ip-card zangfu"><h4>疾厄·脏腑定位（子午流注）</h4><p>疾厄宫@<b>${esc(jieZhi)}</b>宫 → 主看 <b>${esc(ZANGFU[jieZhi]||'—')}</b>${jieRisk.length?`；该宫见 ${esc(jieRisk.join('、'))}，风险加重（防手术血光/慢性疾患）`:'；该宫无明显煞忌，风险较平'}。</p><p class="zangfu-tip">倪师正统以宫位地支定脏腑主轴，煞星/化忌加重风险，大限·流年飞到该宫为发病时间窗。</p></div>` : '';
 const legendCard = `<div class="ip-card legend"><h4>解读置信度图例</h4><p><span class="conf high">🟢高</span> 依据充分、较确定 ｜ <span class="conf mid">🟡中</span> 有依据、中等把握 ｜ <span class="conf low">🔴低</span> 弱关联/单一依据、仅供参考</p></div>`;
 const interpBlock = [
   legendCard,
   interpSec('命主身主 · 命宫格局', interp['命主身主']),
+  interpGeju(interp['格局']),
   interpSec('五行局', interp['五行局']),
-  interpSec('格局', interp['格局']),
   interpSec('生年四化', interp['生年四化']),
   interpSec('命主总论', interp['命主总论']),
+  zangfuCard,
 ].join('');
 const gongData = JSON.stringify(interp['宫象'] || {});
 
@@ -204,6 +222,13 @@ section{background:rgba(255,253,247,.6);border:1px solid var(--line);border-radi
 .ip-card{background:rgba(255,253,247,.7);border-left:3px solid var(--jade);border-radius:6px;padding:11px 15px;margin:8px 0}
 .ip-card h4{color:var(--jade);font-size:16px;margin-bottom:6px}.ip-card p{font-size:15px;margin:5px 0;color:#334;line-height:1.8}
 .ip-card.legend{border-left-color:var(--gold);background:rgba(154,122,46,.1)}.ip-card.legend h4{color:var(--gold)}
+.ip-card.geju{border-left-color:var(--gold)}.ip-card.geju h4{color:var(--gold)}
+.geju-group{margin:6px 0;padding:8px 11px;border-radius:6px}
+.gg-good{background:rgba(63,107,78,.1);border:1px solid rgba(63,107,78,.3)}.gg-bad{background:rgba(156,43,34,.08);border:1px solid rgba(156,43,34,.3)}
+.geju-head{font-weight:700;font-size:14px;margin-bottom:5px}.gg-good .geju-head{color:var(--jade)}.gg-bad .geju-head{color:var(--v)}
+.geju-item{font-size:14px;margin:3px 0;line-height:1.7}.geju-item b{color:var(--ink)}.geju-item span{color:#565}
+.ip-card.zangfu{border-left-color:var(--ji)}.ip-card.zangfu h4{color:var(--ji)}
+.zangfu-tip{font-size:12.5px;color:#998;margin-top:5px;line-height:1.6}
 .conf{font-weight:700}.conf.high{color:var(--jade)}.conf.mid{color:var(--gold)}.conf.low{color:var(--v)}
 .chart-title{font-size:17px;color:var(--v);font-weight:700;margin-bottom:5px}
 .dy-row{display:flex;gap:7px;overflow-x:auto;padding-bottom:4px}
