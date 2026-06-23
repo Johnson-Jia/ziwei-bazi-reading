@@ -76,6 +76,10 @@ ziwei-bazi-reading/
 │   ├── methods/ziwei-method.md
 │   ├── methods/bazi-method.md
 │   └── methods/heming-method.md   # 合盘/婚配/合作配对专题（按需 Read）
+├── corpus/             # 天纪倪师原话语料库 + 通识古诀（按需 Read，引用时溯源）
+│   ├── verified/       # 倪师《天纪》原话（带集数出处）
+│   ├── traditional/    # 紫微通识古诀（非倪师独创）
+│   └── sources.md      # 资料来源清单
 ├── templates/          # 产出模板
 │   └── ziwei-chart.html
 ├── scripts/            # 排盘脚本（紫微+八字均已接入，均 vendor 离线）
@@ -96,7 +100,7 @@ ziwei-bazi-reading/
     └── jieqi.json
 ```
 
-**全流程数据流（紫微 + 八字均已打通）**：生辰 → `scripts/paipan_ziwei.js`（紫微 / iztro）或 `scripts/bazi.js`（八字 / tyme4ts+自研关系·神煞层）→ 结构化命盘 JSON → `methods/*`（推演）→ `templates/*`（渲染）。两引擎均已 vendor 内置、离线可用；脚本缺失时由用户提供排盘数据。**按需 Read** methods/ 对应文件，勿全量加载。
+**全流程数据流（紫微 + 八字均已打通）**：生辰 → `scripts/paipan_ziwei.js`（紫微 / iztro）或 `scripts/bazi.js`（八字 / tyme4ts+自研关系·神煞层）→ 结构化命盘 JSON → `methods/*`（推演）→ `templates/*`（渲染）。两引擎均已 vendor 内置、离线可用；脚本缺失时由用户提供排盘数据。**按需 Read** methods/ 与 corpus/ 对应文件，勿全量加载。引用倪师原话或古诀时查 `corpus/verified/`（倪师《天纪》原话，带集数出处）与 `corpus/traditional/`（通识古诀），确保引述准确、出处可溯。
 
 - **紫微斗数推演**：`methods/methods/ziwei-method.md`（独立体系，含十二宫、四化、大限流年、六维分析、格局速查）
 - **八字命理推演**：`methods/methods/bazi-method.md`（独立体系，含四柱十神、旺衰喜用、大运流年、应吉应凶、六亲对应）
