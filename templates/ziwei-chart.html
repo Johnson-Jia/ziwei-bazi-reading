@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>紫微斗数命盘 · 环形盘面模板</title>
+<!--
+╔══════════════════════════════════════════════════════════════════╗
+║  紫微斗数环形盘面 HTML 模板（朱红宣纸风）                          ║
+║  ────────────────────────────────────────────────────────────────║
+║  布局：4×4 CSS Grid，十二地支顺时针排在「井」字形外圈，中央 2×2     ║
+║       放命主基本信息。地支→宫位 grid 位置已用 class 固定：          ║
+║       巳1/1 午1/2 未1/3 申1/4  辰2/1 酉2/4  卯3/1 戌3/4            ║
+║       寅4/1 丑4/2 子4/3 亥4/4   中央 2/2/4/4                       ║
+║                                                                    ║
+║  套用到新命盘只需 4 步：                                           ║
+║   1) 每个宫位格里替换：宫名 / 干支 / 主星 / 辅星 / 煞星 / 大限年龄  ║
+║   2) 特殊宫位加 class：is-life(命宫) is-body(身宫) is-laiyin(来因) ║
+║   3) 四化徽章：b-lu(禄) b-quan(权) b-ke(科) b-ji(忌)              ║
+║      生年四化用单字「禄/权/科/忌」；自化加箭头「↑权」「↓忌」        ║
+║   4) 中央信息区替换命主资料与生年四化落宫                          ║
+║  煞星(擎羊/陀罗/火星/铃星/地空/地劫/阴煞等)放 .sha 行(自动红色)     ║
+╚══════════════════════════════════════════════════════════════════╝
+-->
+<style>
+  :root{
+    --paper:#f6efe1; --paper2:#efe6d2; --ink:#2a2118; --ink2:#4a3d2c;
+    --vermilion:#9c2b22; --gold:#9a7a2e; --jade:#3f6b4e; --line:#cdb98a;
+    --lu:#4f8a63; --quan:#3a4a7a; --ke:#2a7b8a; --ji:#c0392b;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:"PingFang SC","Microsoft YaHei","Noto Serif SC",serif;
+    background:var(--paper); color:var(--ink); padding:24px 16px;
+    background-image:radial-gradient(circle at 20% 8%,rgba(154,122,46,.07),transparent 42%),
+                     radial-gradient(circle at 82% 92%,rgba(156,43,34,.05),transparent 42%);
+  }
+  .wrap{max-width:820px;margin:0 auto}
+  h1{text-align:center;color:var(--vermilion);letter-spacing:6px;font-size:30px;margin-bottom:2px;font-weight:800}
+  .sub{text-align:center;color:var(--ink2);font-size:13px;letter-spacing:3px;margin-bottom:16px}
+
+  /* ===== 盘面 4×4 环形 ===== */
+  .board{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    grid-template-rows:repeat(4,auto);
+    gap:6px;
+    background:rgba(205,185,138,.35);
+    padding:8px;border-radius:10px;border:2px solid var(--line);
+    box-shadow:0 4px 18px rgba(74,61,44,.1);
+  }
+  .palace{
+    background:rgba(255,253,247,.88);
+    border:1.5px solid var(--line);
+    border-radius:6px;padding:8px 9px;
+    font-size:12px;line-height:1.55;
+    min-height:112px;
+    display:flex;flex-direction:column;
+  }
+  /* 地支→grid 位置（顺时针环形） */
+  .si{grid-area:1/1} .wu{grid-area:1/2} .wei{grid-area:1/3} .shen{grid-area:1/4}
+  .chen{grid-area:2/1} .you{grid-area:2/4}
+  .mao{grid-area:3/1} .xu{grid-area:3/4}
+  .yin{grid-area:4/1} .chou{grid-area:4/2} .zi{grid-area:4/3} .hai{grid-area:4/4}
+  /* 特殊宫位高亮 */
+  .is-life{border:2px solid var(--vermilion);background:rgba(156,43,34,.09)}
+  .is-body{border:2px solid var(--gold);background:rgba(154,122,46,.13)}
+  .is-laiyin{border:2px solid var(--jade);background:rgba(63,107,78,.11)}
+  /* 宫头 */
+  .phead{display:flex;justify-content:space-between;align-items:baseline;
+    border-bottom:1px dashed var(--line);padding-bottom:3px;margin-bottom:4px}
+  .pname{font-weight:800;color:var(--vermilion);font-size:13px}
+  .pgz{color:var(--gold);font-weight:700;font-size:10.5px}
+  .ptag{font-size:9px;padding:1px 5px;border-radius:2px;color:#fff;font-weight:700;margin-left:4px;vertical-align:middle}
+  .ptag.body{background:var(--gold)} .ptag.laiyin{background:var(--jade)}
+  /* 星曜行 */
+  .main{font-weight:700;color:var(--ink);font-size:12.5px;margin-bottom:2px}
+  .aux{color:var(--ink2);font-size:11px}
+  .sha{color:var(--ji);font-size:11px;font-weight:700}
+  .age{margin-top:auto;font-size:10px;color:var(--gold);font-weight:700;
+    border-top:1px dotted var(--line);padding-top:3px}
+  .empty{color:#b9a98a;font-style:italic}
+  /* 四化徽章 */
+  .b{display:inline-block;font-size:9px;padding:1px 4px;border-radius:2px;color:#fff;font-weight:700;margin:0 1px;vertical-align:middle}
+  .b-lu{background:var(--lu)} .b-quan{background:var(--quan)} .b-ke{background:var(--ke)} .b-ji{background:var(--ji)}
+
+  /* ===== 中央信息区（跨 2×2） ===== */
+  .center{
+    grid-area:2/2/4/4;
+    background:linear-gradient(135deg,rgba(156,43,34,.07),rgba(154,122,46,.09));
+    border:2px solid var(--gold);border-radius:6px;
+    padding:12px 14px;font-size:11.5px;line-height:1.7;
+    display:flex;flex-direction:column;justify-content:space-between;
+  }
+  .center h2{font-size:14px;color:var(--vermilion);text-align:center;letter-spacing:2px;
+    border-bottom:1px solid var(--line);padding-bottom:5px;margin-bottom:7px}
+  .crow{display:flex;gap:6px;align-items:baseline}
+  .crow .k{color:var(--gold);font-weight:700;min-width:52px;font-size:11px}
+  .crow .v{color:var(--ink)}
+  .sihua{margin-top:6px;padding-top:6px;border-top:1px dashed var(--line)}
+  .sihua .stitle{color:var(--vermilion);font-weight:700;font-size:11px;margin-bottom:2px}
+  .sline{font-size:10.5px;margin:1px 0}
+  .s-lu{color:var(--lu);font-weight:700}.s-quan{color:var(--quan);font-weight:700}
+  .s-ke{color:var(--ke);font-weight:700}.s-ji{color:var(--ji);font-weight:700}
+
+  /* ===== 图例 ===== */
+  .legend{display:flex;gap:10px;flex-wrap:wrap;margin:16px 0 8px;justify-content:center;font-size:11px}
+  .legend span{padding:3px 11px;border-radius:11px;color:#fff;font-weight:600}
+
+  @media(max-width:640px){
+    .palace{min-height:92px;font-size:10px;padding:5px 6px}
+    .main{font-size:11px}.aux,.sha{font-size:10px}
+    .center{font-size:10px;padding:8px}
+    h1{font-size:22px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>紫微斗数命盘</h1>
+  <div class="sub">男命 · 癸酉年九月初六日戌时 · 金四局</div>
+
+  <div class="legend">
+    <span class="b-lu">化禄</span>
+    <span class="b-quan">化权</span>
+    <span class="b-ke">化科</span>
+    <span class="b-ji">化忌</span>
+    <span style="background:var(--gold)">身宫</span>
+    <span style="background:var(--jade)">来因宫</span>
+  </div>
+
+  <div class="board">
+
+    <!-- ═══ 顶行：巳 午 未 申 ═══ -->
+    <div class="palace si">
+      <div class="phead"><span class="pname">交友宫</span><span class="pgz">丁巳</span></div>
+      <div class="main">紫微 七杀</div>
+      <div class="aux">天钺 天刑</div>
+      <div class="age">大限 74–83</div>
+    </div>
+
+    <div class="palace wu">
+      <div class="phead"><span class="pname">迁移宫</span><span class="pgz">戊午</span></div>
+      <div class="main"><span class="empty">（空宫）</span></div>
+      <div class="aux">红鸾 天官 天贵</div>
+      <div class="age">大限 64–73</div>
+    </div>
+
+    <div class="palace wei">
+      <div class="phead"><span class="pname">疾厄宫</span><span class="pgz">己未</span></div>
+      <div class="main"><span class="empty">（空宫）</span></div>
+      <div class="aux">天使 寡宿</div>
+      <div class="age">大限 54–63</div>
+    </div>
+
+    <div class="palace shen is-body">
+      <div class="phead"><span class="pname">财帛宫</span><span class="pgz">庚申<span class="ptag body">身宫</span></span></div>
+      <div class="main"><span class="empty">（空宫）</span></div>
+      <div class="sha">铃星[陷]</div>
+      <div class="age">大限 44–53</div>
+    </div>
+
+    <!-- ═══ 左列：辰 … 右列：酉 ═══ -->
+    <div class="palace chen">
+      <div class="phead"><span class="pname">官禄宫</span><span class="pgz">丙辰</span></div>
+      <div class="main">天机<span class="b b-quan">↓权</span> 天梁<span class="b b-lu">↑禄</span></div>
+      <div class="aux">解神 龙德</div>
+      <div class="age">大限 84–93</div>
+    </div>
+
+    <div class="palace you">
+      <div class="phead"><span class="pname">子女宫</span><span class="pgz">辛酉</span></div>
+      <div class="main">廉贞 破军<span class="b b-lu">禄</span></div>
+      <div class="aux">天姚</div>
+      <div class="sha">地劫</div>
+      <div class="age">大限 34–43</div>
+    </div>
+
+    <!-- ═══ 左列：卯 … 右列：戌 ═══ -->
+    <div class="palace mao">
+      <div class="phead"><span class="pname">田宅宫</span><span class="pgz">乙卯</span></div>
+      <div class="main">天相[陷]</div>
+      <div class="aux">天魁 天虚</div>
+      <div class="age">大限 94–103</div>
+    </div>
+
+    <div class="palace xu">
+      <div class="phead"><span class="pname">夫妻宫</span><span class="pgz">壬戌</span></div>
+      <div class="main"><span class="empty">（空宫）</span></div>
+      <div class="sha">旬空 天空 阴煞</div>
+      <div class="age">大限 24–33</div>
+    </div>
+
+    <!-- ═══ 底行：寅 丑 子 亥 ═══ -->
+    <div class="palace yin">
+      <div class="phead"><span class="pname">福德宫</span><span class="pgz">甲寅</span></div>
+      <div class="main">太阳<span class="b b-ji">↓忌</span><span class="b b-lu">↑禄</span> 巨门<span class="b b-quan">权</span></div>
+      <div class="aux">文曲 右弼</div>
+      <div class="age">大限 104–113</div>
+    </div>
+
+    <div class="palace chou">
+      <div class="phead"><span class="pname">父母宫</span><span class="pgz">乙丑</span></div>
+      <div class="main">武曲<span class="b b-lu">↑禄</span> 贪狼<span class="b b-ji">忌</span><span class="b b-quan">↑权</span></div>
+      <div class="sha">擎羊 火星 地空</div>
+      <div class="age">大限 114–123</div>
+    </div>
+
+    <div class="palace zi is-life">
+      <div class="phead"><span class="pname">命　宫</span><span class="pgz">甲子</span></div>
+      <div class="main">天同 太阴<span class="b b-ke">科</span><span class="b b-quan">↑权</span></div>
+      <div class="aux">文昌 左辅 禄存 天喜</div>
+      <div class="age">大限 4–13</div>
+    </div>
+
+    <div class="palace hai is-laiyin">
+      <div class="phead"><span class="pname">兄弟宫</span><span class="pgz">癸亥<span class="ptag laiyin">来因</span></span></div>
+      <div class="main">天府[得]</div>
+      <div class="aux">孤辰</div>
+      <div class="sha">陀罗</div>
+      <div class="aux">天马</div>
+      <div class="age">大限 14–23</div>
+    </div>
+
+    <!-- ═══ 中央信息区 ═══ -->
+    <div class="center">
+      <div>
+        <h2>命主基本信息</h2>
+        <div class="crow"><span class="k">性　别</span><span class="v">男</span></div>
+        <div class="crow"><span class="k">生　辰</span><span class="v">癸酉年九月初六日 戌时</span></div>
+        <div class="crow"><span class="k">五行局</span><span class="v">金四局</span></div>
+        <div class="crow"><span class="k">大　限</span><span class="v">阴男逆行 · 4 岁起运</span></div>
+        <div class="crow"><span class="k">命　主</span><span class="v">贪狼 ｜ 身主：天同</span></div>
+        <div class="crow"><span class="k">身　宫</span><span class="v">申（财帛宫）</span></div>
+        <div class="crow"><span class="k">来因宫</span><span class="v">亥（兄弟宫）</span></div>
+      </div>
+      <div class="sihua">
+        <div class="stitle">生年四化（癸年）</div>
+        <div class="sline"><span class="s-lu">破军化禄</span> → 子女宫</div>
+        <div class="sline"><span class="s-quan">巨门化权</span> → 福德宫</div>
+        <div class="sline"><span class="s-ke">太阴化科</span> → 命　宫</div>
+        <div class="sline"><span class="s-ji">贪狼化忌</span> → 父母宫</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</body>
+</html>

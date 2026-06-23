@@ -1,0 +1,26 @@
+# 依赖
+node_modules/
+*.log
+npm-debug.log*
+
+# 操作系统
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+.local/
+
+# 生成的个人命书/解读数据（隐私，不入库）
+*命书*.html
+*命盘*.html
+*运势*.html
+*流年*.html
+*详批*.html
+解读-*.json
+
+# 运行时工作区
+workspace/
+workspace-*/
