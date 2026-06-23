@@ -1,0 +1,30 @@
+import { Lunar } from './Lunar';
+import { TaoFestival } from './TaoFestival';
+export declare class Tao {
+    private readonly _lunar;
+    static BIRTH_YEAR: number;
+    constructor(lunar: Lunar);
+    static fromLunar(lunar: Lunar): Tao;
+    static fromYmdHms(lunarYear: number, lunarMonth: number, lunarDay: number, hour: number, minute: number, second: number): Tao;
+    static fromYmd(lunarYear: number, lunarMonth: number, lunarDay: number): Tao;
+    getLunar(): Lunar;
+    getYear(): number;
+    getMonth(): number;
+    getDay(): number;
+    getYearInChinese(): string;
+    getMonthInChinese(): string;
+    getDayInChinese(): string;
+    getFestivals(): TaoFestival[];
+    private _isDayIn;
+    isDaySanHui(): boolean;
+    isDaySanYuan(): boolean;
+    isDayBaJie(): boolean;
+    isDayWuLa(): boolean;
+    isDayBaHui(): boolean;
+    isDayMingWu(): boolean;
+    isDayAnWu(): boolean;
+    isDayWu(): boolean;
+    isDayTianShe(): boolean;
+    toString(): string;
+    toFullString(): string;
+}

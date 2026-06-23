@@ -1,5 +1,6 @@
 # 依赖
 node_modules/
+!scripts/vendor/node_modules/   # 例外: vendor 运行时依赖(iztro的dayjs/i18next/lunar-lite/lunar-typescript)入库，保证离线开箱即用
 *.log
 npm-debug.log*
 

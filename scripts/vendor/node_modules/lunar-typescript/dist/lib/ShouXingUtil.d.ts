@@ -1,0 +1,37 @@
+export declare class ShouXingUtil {
+    static ONE_THIRD: number;
+    static SECOND_PER_DAY: number;
+    static SECOND_PER_RAD: number;
+    private static NUT_B;
+    private static DT_AT;
+    private static XL0;
+    private static XL1;
+    private static QI_KB;
+    private static QB;
+    private static SHUO_KB;
+    private static SB;
+    private static decode;
+    static nutationLon2(t: number): number;
+    static eLon(t: number, n: number): number;
+    static mLon(t: number, n: number): number;
+    static gxcSunLon(t: number): number;
+    static ev(t: number): number;
+    static saLon(t: number, n: number): number;
+    static dtExt(y: number, jsd: number): number;
+    static dtCalc(y: number): number;
+    static dtT(t: number): number;
+    static mv(t: number): number;
+    static saLonT(w: number): number;
+    static msaLon(t: number, mn: number, sn: number): number;
+    static msaLonT(w: number): number;
+    static saLonT2(w: number): number;
+    static msaLonT2(w: number): number;
+    static qiHigh(w: number): number;
+    static shuoHigh(w: number): number;
+    static qiLow(w: number): number;
+    static shuoLow(w: number): number;
+    static calcShuo(jd: number): number;
+    static calcQi(jd: number): number;
+    static qiAccurate(w: number): number;
+    static qiAccurate2(jd: number): number;
+}
