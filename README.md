@@ -39,11 +39,29 @@
 
 ### 安装
 
-把本仓库克隆到 Claude Code 的 skills 目录：
+**一键安装（推荐）**：
+
+```bash
+# 方式一：curl 一键安装（全局，装到 ~/.claude/skills/）
+curl -sL https://raw.githubusercontent.com/Johnson-Jia/ziwei-bazi-reading/main/install.sh | bash
+
+# 方式二：clone 后运行安装器
+git clone https://github.com/Johnson-Jia/ziwei-bazi-reading.git
+cd ziwei-bazi-reading
+./install.sh              # 全局安装（默认，~/.claude/skills/）
+./install.sh --project    # 项目级（装到当前项目 .claude/skills/）
+./install.sh --copy-only  # 仅复制文件，跳过 npm 依赖
+```
+
+安装器自动完成：复制技能文件 → 检测 Node.js → 装 iztro 运行时依赖 → 八字/紫微排盘验证。
+
+> Windows 用户请在 **Git Bash** 或 WSL 中运行。
+
+**手动安装**（等价于 install.sh）：
 
 ```bash
 git clone https://github.com/Johnson-Jia/ziwei-bazi-reading.git ~/.claude/skills/ziwei-bazi-reading
-cd ~/.claude/skills/ziwei-bazi-reading/scripts/vendor/iztro && npm install   # 装 iztro 运行时依赖
+cd ~/.claude/skills/ziwei-bazi-reading/scripts/vendor/iztro && npm install --ignore-scripts   # 装 iztro 运行时依赖
 ```
 
 ### 用法（在 Claude Code 里）
