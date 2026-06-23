@@ -1,0 +1,8 @@
+{
+  "dependencies": {
+    "dayjs": "^1.11.21",
+    "i18next": "^23.16.8",
+    "lunar-lite": "^0.2.8",
+    "lunar-typescript": "^1.8.6"
+  }
+}

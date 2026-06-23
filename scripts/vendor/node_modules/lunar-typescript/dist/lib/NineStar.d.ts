@@ -1,0 +1,31 @@
+export declare class NineStar {
+    static NAME_BEI_DOU: string[];
+    static NAME_XUAN_KONG: string[];
+    static NAME_QI_MEN: string[];
+    static BA_MEN_QI_MEN: string[];
+    static NAME_TAI_YI: string[];
+    static TYPE_TAI_YI: string[];
+    static SONG_TAI_YI: string[];
+    static LUCK_QI_MEN: string[];
+    private readonly _index;
+    static fromIndex(index: number): NineStar;
+    constructor(index: number);
+    getNumber(): string;
+    getColor(): string;
+    getWuXing(): string;
+    getPosition(): string;
+    getPositionDesc(): string;
+    getNameInXuanKong(): string;
+    getNameInBeiDou(): string;
+    getNameInQiMen(): string;
+    getNameInTaiYi(): string;
+    getLuckInQiMen(): string;
+    getLuckInXuanKong(): string;
+    getYinYangInQiMen(): string;
+    getTypeInTaiYi(): string;
+    getBaMenInQiMen(): string;
+    getSongInTaiYi(): string;
+    getIndex(): number;
+    toString(): string;
+    toFullString(): string;
+}
