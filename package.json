@@ -1,0 +1,27 @@
+{
+  "name": "ziwei-bazi-reading",
+  "version": "1.0.0",
+  "description": "LLM-powered Chinese fortune-telling skill (Zi Wei Dou Shu + BaZi) for Claude Code — algorithm computes the chart, LLM interprets.",
+  "keywords": [
+    "ziwei",
+    "zi-wei-dou-shu",
+    "bazi",
+    "fortune-telling",
+    "chinese-astrology",
+    "claude-code",
+    "claude-skill",
+    "iztro",
+    "tyme4ts",
+    "llm"
+  ],
+  "author": "Johnson-Jia",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Johnson-Jia/ziwei-bazi-reading.git"
+  },
+  "homepage": "https://github.com/Johnson-Jia/ziwei-bazi-reading",
+  "bugs": {
+    "url": "https://github.com/Johnson-Jia/ziwei-bazi-reading/issues"
+  }
+}

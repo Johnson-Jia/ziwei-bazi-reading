@@ -1,0 +1,58 @@
+{
+  "name": "tyme4ts",
+  "version": "1.5.2",
+  "description": "Tyme是一个非常强大的日历工具库，可以看作 Lunar 的升级版，拥有更优的设计和扩展性，支持公历、农历、藏历、回历、星座、干支、生肖、节气、月相、法定假日等。",
+  "main": "./dist/lib/index.cjs",
+  "module": "./dist/lib/index.mjs",
+  "types": "./dist/lib/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/lib/index.d.ts",
+      "require": "./dist/lib/index.cjs",
+      "import": "./dist/lib/index.mjs"
+    }
+  },
+  "scripts": {
+    "lint": "eslint",
+    "build": "unbuild",
+    "test": "mocha -r ts-node/register --config=.mocharc.json",
+    "release": "npm run test && npm publish",
+    "js": "unbuild && node build-js.js"
+  },
+  "homepage": "https://github.com/6tail/tyme4ts",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/6tail/tyme4ts.git"
+  },
+  "keywords": [
+    "公历",
+    "农历",
+    "藏历",
+    "回历",
+    "儒略日",
+    "星座",
+    "干支",
+    "节气",
+    "月相",
+    "法定假日"
+  ],
+  "author": "6tail <6tail@6tail.cn> (https://6tail.cn)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/6tail/tyme4ts/issues"
+  },
+  "devDependencies": {
+    "@testdeck/mocha": "^0.3.3",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "^22.10.10",
+    "@typescript-eslint/eslint-plugin": "^8.21.0",
+    "@typescript-eslint/parser": "^8.21.0",
+    "typescript-eslint": "^8.21.0",
+    "eslint": "^9.26.0",
+    "mocha": "^11.1.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.7.3",
+    "unbuild": "^3.3.1",
+    "globals": "^15.14.0"
+  }
+}
