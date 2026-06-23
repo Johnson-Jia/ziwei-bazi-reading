@@ -1,0 +1,37 @@
+import { NineStar } from './NineStar';
+export declare class LunarMonth {
+    private readonly _year;
+    private readonly _month;
+    private readonly _dayCount;
+    private readonly _firstJulianDay;
+    private readonly _index;
+    private readonly _zhiIndex;
+    static fromYm(lunarYear: number, lunarMonth: number): LunarMonth | null;
+    constructor(lunarYear: number, lunarMonth: number, dayCount: number, firstJulianDay: number, index: number);
+    getYear(): number;
+    getMonth(): number;
+    getIndex(): number;
+    getGanIndex(): number;
+    getZhiIndex(): number;
+    getGan(): string;
+    getZhi(): string;
+    getGanZhi(): string;
+    isLeap(): boolean;
+    getDayCount(): number;
+    getFirstJulianDay(): number;
+    getPositionXi(): string;
+    getPositionXiDesc(): string;
+    getPositionYangGui(): string;
+    getPositionYangGuiDesc(): string;
+    getPositionYinGui(): string;
+    getPositionYinGuiDesc(): string;
+    getPositionFu(sect?: number): string;
+    getPositionFuDesc(sect?: number): string;
+    getPositionCai(): string;
+    getPositionCaiDesc(): string;
+    getPositionTaiSui(): string;
+    getPositionTaiSuiDesc(): string;
+    getNineStar(): NineStar;
+    toString(): string;
+    next(n: number): LunarMonth | null;
+}

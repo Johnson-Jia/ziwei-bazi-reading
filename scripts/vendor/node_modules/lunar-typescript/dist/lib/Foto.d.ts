@@ -1,0 +1,34 @@
+import { Lunar } from './Lunar';
+import { FotoFestival } from './FotoFestival';
+export declare class Foto {
+    private readonly _lunar;
+    static DEAD_YEAR: number;
+    constructor(lunar: Lunar);
+    static fromLunar(lunar: Lunar): Foto;
+    static fromYmdHms(lunarYear: number, lunarMonth: number, lunarDay: number, hour: number, minute: number, second: number): Foto;
+    static fromYmd(lunarYear: number, lunarMonth: number, lunarDay: number): Foto;
+    getLunar(): Lunar;
+    getYear(): number;
+    getMonth(): number;
+    getDay(): number;
+    getYearInChinese(): string;
+    getMonthInChinese(): string;
+    getDayInChinese(): string;
+    getFestivals(): FotoFestival[];
+    getOtherFestivals(): string[];
+    isMonthZhai(): boolean;
+    isDayYangGong(): boolean;
+    isDayZhaiShuoWang(): boolean;
+    isDayZhaiSix(): boolean;
+    isDayZhaiTen(): boolean;
+    isDayZhaiGuanYin(): boolean;
+    getXiu(): string;
+    getXiuLuck(): string;
+    getXiuSong(): string;
+    getZheng(): string;
+    getAnimal(): string;
+    getGong(): string;
+    getShou(): string;
+    toString(): string;
+    toFullString(): string;
+}
