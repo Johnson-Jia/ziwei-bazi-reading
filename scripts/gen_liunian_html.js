@@ -4,6 +4,9 @@
  */
 const { analyze } = require('./bazi_core');
 const fs = require('fs');
+const path = require('path');
+const { ensureWorkspace } = require('./_workspace');
+const WS = ensureWorkspace();
 function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 const DIMS = ['妻','财','子','禄','父','身','友','考','宅','灾'];
 const X = {财:'慎投资',父:'关注父辈',宅:'房产谨慎',妻:'感情维系',灾:'注意健康',身:'勿过劳',子:'子女留意',禄:'事业稳重',考:'学业努力',友:'人际谨慎'};
@@ -14,8 +17,8 @@ const INTERP={'财凶':'破财/收入波动/投资损;父辈耗;感情波折','�
 function interpret(d){return DIMS.map(k=>INTERP[k+d[k].verdict]).filter(Boolean).join('；');}
 const argv = process.argv.slice(2);
 let Y,Mo,D,H,MIN,gender,startYear,endYear,outPath;
-if(argv.length>=6){[Y,Mo,D,H,MIN]=argv.slice(0,5).map(Number);gender=argv[5];startYear=argv[6]?Number(argv[6]):1994;endYear=argv[7]?Number(argv[7]):(Y+99);outPath=argv[8]||`八字运势-${Y}.html`;}
-else{Y=1993;Mo=10;D=20;H=19;MIN=10;gender='男';startYear=1994;endYear=Y+99;outPath='八字运势-1993.html';console.error(`[demo]→${outPath}`);}
+if(argv.length>=6){[Y,Mo,D,H,MIN]=argv.slice(0,5).map(Number);gender=argv[5];startYear=argv[6]?Number(argv[6]):1994;endYear=argv[7]?Number(argv[7]):(Y+99);outPath=argv[8]||path.join(WS,`八字运势-${Y}.html`);}
+else{Y=2000;Mo=8;D=16;H=14;MIN=30;gender='男';startYear=1994;endYear=Y+99;outPath=path.join(WS,'八字运势-2000.html');console.error(`[demo]→${outPath}`);}
 const r=analyze(Y,Mo,D,H,MIN,gender,startYear,endYear);
 const c=r.chart;
 const byDy={};r.liunian.forEach(l=>{(byDy[l.dayun]=byDy[l.dayun]||[]).push(l);});

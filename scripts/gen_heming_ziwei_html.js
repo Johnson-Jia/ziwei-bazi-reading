@@ -7,6 +7,8 @@
  * 依赖: iztro v2.5.8 (vendor/iztro) + 运行时依赖 (vendor/node_modules)
  */
 const path = require('path'), fs = require('fs');
+const { ensureWorkspace } = require('./_workspace');
+const WS = ensureWorkspace();
 const { astro } = require(path.join(__dirname, 'vendor/iztro/lib/index.js'));
 const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 
@@ -14,11 +16,11 @@ const argv = process.argv.slice(2);
 let dA, tA, gA, dB, tB, gB, outPath, jiePath;
 if (argv.length >= 6) {
   [dA, tA, gA, dB, tB, gB] = argv; tA = Number(tA); tB = Number(tB);
-  outPath = argv[6] || `紫微合盘-${dA.split('-')[0]}×${dB.split('-')[0]}.html`;
+  outPath = argv[6] || path.join(WS, `紫微合盘-${dA.split('-')[0]}×${dB.split('-')[0]}.html`);
   jiePath = argv[7] || '';
 } else {
   dA='1990-3-15'; tA=3; gA='男'; dB='1992-8-20'; tB=9; gB='女';
-  outPath='紫微合盘-demo.html'; jiePath='';
+  outPath=path.join(WS,'紫微合盘-demo.html'); jiePath='';
   console.error('[demo] A=1990-03-15卯时男 × B=1992-08-20酉时女 → '+outPath);
 }
 

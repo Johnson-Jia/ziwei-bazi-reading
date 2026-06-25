@@ -21,7 +21,11 @@ Thumbs.db
 *流年*.html
 *详批*.html
 解读-*.json
+scripts/_*.json
+scripts/_*.js
+!scripts/_workspace.js   # 例外: workspace解析模块(核心,需入库)
 
 # 运行时工作区
 workspace/
 workspace-*/
+.ziwei-workspace

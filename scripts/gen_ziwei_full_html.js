@@ -6,15 +6,33 @@
  * 用法: node gen_ziwei_full_html.js <YYYY-M-D> <时辰0-12> <男|女> [起年] [止年] [输出.html] [解读.json]
  */
 const path = require('path'), fs = require('fs');
+const { ensureWorkspace } = require('./_workspace');
+const WS = ensureWorkspace();
 const { astro } = require(path.join(__dirname, 'vendor/iztro/lib/index.js'));
 const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 
-const DIMS = [['妻','夫妻'],['财','财帛'],['子','子女'],['禄','官禄'],['父','父母'],['身','命宫'],['友','仆役'],['考','官禄'],['宅','田宅'],['灾','疾厄']];
-const JI = new Set(['左辅','右弼','天魁','天钺','文昌','文曲','禄存','流禄','流喜','流魁','流钺','年解']);
+const DIMS = [['妻','夫妻'],['财','财帛'],['子','子女'],['禄','官禄'],['父','父母'],['身','命宫'],['友','仆役'],['考','福德'],['宅','田宅'],['灾','疾厄']];
+const JI = new Set(['左辅','右弼','天魁','天钺','文昌','文曲','禄存']);  // 流年虚吉星(流禄/流喜/流魁/流钺/年解)权重过低、易让盘偏吉，去除
 const SHA = new Set(['擎羊','陀罗','火星','铃星','地空','地劫','流羊','流陀','天刑','阴煞']);
-function judgeDim(a,y,pn){const pIdx=y.palaceNames.indexOf(pn);if(pIdx<0)return{verdict:'平',score:0};const o=a.palaces[pIdx],liu=y.stars[pIdx]||[];let ji=0,x=0;(o.majorStars||[]).forEach(s=>{if(['庙','旺'].includes(s.brightness))ji++;else if(s.brightness==='陷')x++;if(s.mutagen==='禄'||s.mutagen==='科')ji++;else if(s.mutagen==='忌')x++;else if(s.mutagen==='权')ji+=.5;});[...(o.minorStars||[]),...(o.adjectiveStars||[]),...liu].forEach(s=>{if(JI.has(s.name))ji++;if(SHA.has(s.name))x++;});[['禄',y.mutagen[0]],['权',y.mutagen[1]],['科',y.mutagen[2]],['忌',y.mutagen[3]]].forEach(([t,st])=>{if(st&&(o.majorStars||[]).some(s=>s.name===st)){if(t==='禄'||t==='科')ji++;else if(t==='忌')x++;else ji+=.5;}});const sc=ji-x;return{verdict:sc>0?'吉':sc<0?'凶':'平',score:+sc.toFixed(1)};}
+function judgeDim(a,y,pn){const pIdx=y.palaceNames.indexOf(pn);if(pIdx<0)return{verdict:'平',score:0};const o=a.palaces.find(function(p){return p.name===pn;})||a.palaces[pIdx],liu=y.stars[pIdx]||[];let ji=0,x=0;(o.majorStars||[]).forEach(s=>{const b=s.brightness;if(b==='庙'||b==='旺')ji+=0.5;else if(b==='陷')x+=0.5;if(s.mutagen==='禄'||s.mutagen==='科')ji+=0.5;else if(s.mutagen==='忌')x+=0.5;else if(s.mutagen==='权')ji+=0.3;});[...(o.minorStars||[]),...(o.adjectiveStars||[]),...liu].forEach(s=>{if(JI.has(s.name))ji+=0.5;if(SHA.has(s.name))x+=0.8;});[['禄',y.mutagen[0]],['权',y.mutagen[1]],['科',y.mutagen[2]],['忌',y.mutagen[3]]].forEach(([t,st])=>{if(st&&(o.majorStars||[]).some(s=>s.name===st)){if(t==='禄'||t==='科')ji+=2;else if(t==='忌')x+=2;else ji+=1;}});const sc=ji-x;return{verdict:sc>0?'吉':sc<0?'凶':'平',score:+sc.toFixed(1)};}
 const INTERP = {'财凶':'破财/收入波动;父辈耗','灾凶':'健康/血光/意外','子凶':'子女事谨慎;胎停(若孕育)','禄凶':'事业压力/变动','考吉':'学业/资质/深造;贵人','身凶':'过劳/精力降','身吉':'精力充沛/安顿','禄吉':'晋升/掌权','财吉':'得财/理财机遇','考凶':'学业受阻','友吉':'合作得力/担财','友凶':'竞争/劫财/口舌','妻凶':'感情波折','宅凶':'房产波折','父凶':'父辈健康/家耗'};
 const interpret = d => DIMS.map(([k]) => INTERP[k+d[k].verdict]).filter(Boolean).join('；');
+// 流年LLM解读: 大限基调(十年环境) × 流年宫象(逐年) + 叠加提示(动态)
+const interpretLN=l=>{
+  const dx=l.dxDims||{};
+  const dxF=DIMS.filter(([k])=>dx[k]&&dx[k].verdict==='凶').map(([k])=>k).slice(0,3);
+  const dxJ=DIMS.filter(([k])=>dx[k]&&dx[k].verdict==='吉').map(([k])=>k).slice(0,3);
+  const lf=DIMS.filter(([k])=>l.dims[k]&&l.dims[k].verdict==='凶').map(([k])=>k);
+  const lj=DIMS.filter(([k])=>l.dims[k]&&l.dims[k].verdict==='吉').map(([k])=>k);
+  const p=[];
+  if(dxF.length)p.push(`〔${l.dk}大限·忌神基调:${dxF.join('/')}〕`);
+  if(dxJ.length)p.push(`〔${l.dk}大限·喜用基调:${dxJ.join('/')}〕`);
+  if(lf.length)p.push('流年应凶:'+lf.join('/'));
+  if(lj.length)p.push('流年应吉:'+lj.join('/'));
+  if(dxF.length&&lj.length)p.push('忌限逢喜年·吉气打折');
+  if(dxJ.length&&lf.length)p.push('喜限逢忌年·凶势减轻');
+  return p.join('；')||'平稳';
+};
 
 const ZHI_PIN = {子:'zi',丑:'chou',寅:'yin',卯:'mao',辰:'chen',巳:'si',午:'wu',未:'wei',申:'shen',酉:'you',戌:'xu',亥:'hai'};
 const SHA_SET = new Set(['擎羊','陀罗','火星','铃星','地空','地劫','天刑','阴煞','天空','截路','旬空','空亡','天虚','天哭','破碎','蜚廉','孤辰','寡宿','天使','天伤','咸池']);
@@ -37,11 +55,11 @@ if (argv.length >= 3) {
   [dateStr,timeIdx,gender] = argv; timeIdx = Number(timeIdx);
   startYear = argv[3] ? Number(argv[3]) : 1994;
   endYear   = argv[4] ? Number(argv[4]) : (Number(dateStr.split('-')[0])+99);
-  outPath   = argv[5] || `紫微命书-${dateStr.split('-')[0]}.html`;
+  outPath   = argv[5] || path.join(WS, `紫微命书-${dateStr.split('-')[0]}.html`);
   interpPath = argv[6] || '';
   liunianJiePath = argv[7] || '';
 } else {
-  dateStr='1993-10-20';timeIdx=10;gender='男';startYear=1994;endYear=2092;outPath='紫微命书-1993.html';interpPath='';liunianJiePath='';
+  dateStr='2000-08-16';timeIdx=10;gender='男';startYear=1994;endYear=2092;outPath=path.join(WS,'紫微命书-2000.html');interpPath='';liunianJiePath='';
   console.error('[demo]→'+outPath);
 }
 
@@ -152,14 +170,14 @@ for (let y=startYear; y<=endYear; y++) {
   const dec = h.decadal, yi = h.yearly;
   const dk = dec.heavenlyStem + dec.earthlyBranch;
   const liuMing = a.palaces[yi.palaceNames.indexOf('命宫')] ? a.palaces[yi.palaceNames.indexOf('命宫')].earthlyBranch : '?';
-  const dims = {}; DIMS.forEach(([d,pn]) => dims[d] = judgeDim(a, yi, pn));
-  data.push({year:y, taiSui:yi.heavenlyStem+yi.earthlyBranch, liuMing, mutagen:`${yi.mutagen[0]}禄/${yi.mutagen[1]}权/${yi.mutagen[2]}科/${yi.mutagen[3]}忌`, dims, dk});
+  const dims = {}; const dxDims={}; DIMS.forEach(([d,pn]) => { const ly=judgeDim(a,yi,pn), dx=judgeDim(a,dec,pn); const sc=ly.score+dx.score*0.5; dims[d]={verdict:sc>0?'吉':sc<0?'凶':'平', score:+sc.toFixed(1)}; dxDims[d]=dx; });  // 流年宫象 + 大限基调×0.5
+  data.push({year:y, taiSui:yi.heavenlyStem+yi.earthlyBranch, liuMing, mutagen:`${yi.mutagen[0]}禄/${yi.mutagen[1]}权/${yi.mutagen[2]}科/${yi.mutagen[3]}忌`, dims, dxDims, dk});
   if (!byDy[dk]) byDy[dk] = []; byDy[dk].push(data[data.length-1]);
 }
 const currentDk = (data.find(l => l.year===2026) || {dk: daXians[0]?daXians[0].dk:''}).dk;
 const allData = JSON.stringify(data.map(l => ({y:l.year, ck:l.dk, d:Object.fromEntries(DIMS.map(([k])=>[k,l.dims[k].score]))})));
 const dyCards = daXians.map(d => { const isNow = d.dk===currentDk; const ms = (d.palace.majorStars||[]).map(s=>s.name).slice(0,2).join(' '); const pn = d.palace.name.endsWith('宫') ? d.palace.name : d.palace.name+'宫'; const jie = dxJie(d.dk); return `<div class="dy-card${isNow?' now':''}${jie?' has-jie':''}" data-dy="${esc(d.dk)}" onclick="showDy('${esc(d.dk)}')" title="${esc(jie)}"><div class="dy-gz">${esc(d.dk)}${isNow?'<span class="now-tag">当前</span>':''}${jie?'<span class="jie-tag">📖</span>':''}</div><div class="dy-ya">${esc(d.years)}年 · ${esc(d.ages)}岁</div><div class="dy-palace">${esc(pn)}@${esc(d.palace.earthlyBranch)} ${esc(ms)||'空'}</div></div>`; }).join('');
-const dyPanels = daXians.map(d => { const lys = byDy[d.dk]||[]; const rows = lys.map(l => { const lText = lyJie(l.year) ? `🔮 ${esc(lyJie(l.year))}` : `🔮 ${esc(interpret(l.dims)||'平稳年')}`; return `<div class="ly-row"><span class="ly-year">${l.year}</span><span class="ly-gz">${esc(l.taiSui)}</span><span class="ly-branch">流命@${esc(l.liuMing)}</span><span class="mutagen">${esc(l.mutagen)}</span><span class="dim-row">${DIMS.map(([k])=>`<span class="dim-badge d-${l.dims[k].verdict}">${k}</span>`).join('')}</span></div><div class="ly-interp">${lText}</div>`; }).join(''); return `<div class="dy-panel" id="panel-${esc(d.dk)}">${rows||'<p class="empty">该大限范围外(无流年数据)</p>'}</div>`; }).join('');
+const dyPanels = daXians.map(d => { const lys = byDy[d.dk]||[]; const rows = lys.map(l => { const lText = lyJie(l.year) ? `🔮 ${esc(lyJie(l.year))}` : `🔮 ${esc(interpretLN(l))}`; return `<div class="ly-row"><span class="ly-year">${l.year}</span><span class="ly-gz">${esc(l.taiSui)}</span><span class="ly-branch">流命@${esc(l.liuMing)}</span><span class="mutagen">${esc(l.mutagen)}</span><span class="dim-row">${DIMS.map(([k])=>`<span class="dim-badge d-${l.dims[k].verdict}">${k}</span>`).join('')}</span></div><div class="ly-interp">${lText}</div>`; }).join(''); return `<div class="dy-panel" id="panel-${esc(d.dk)}">${rows||'<p class="empty">该大限范围外(无流年数据)</p>'}</div>`; }).join('');
 
 const html = `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>紫微命书·${esc(dateStr)}</title>
@@ -265,7 +283,7 @@ section{background:rgba(255,253,247,.6);border:1px solid var(--line);border-radi
 ${interpBlock || '<p class="empty">（未提供解读.json，解析区为空。命盘与运势已自动生成。）</p>'}
 </section>
 
-<section><div class="chart-title">📊 运势折线图（整体/财官/印比 · 点击大限联动 · 鼠标悬停看明细）</div><div id="chart-area"></div></section>
+<section><div class="chart-title">📊 逐年运势（主线默认展开 · 维度明细可折叠）</div><div id="chart-area"></div></section>
 
 <div class="dy-section" style="margin-bottom:12px"><h3 style="font-size:15px;color:#543;margin-bottom:7px">🔄 大限（${daXians.length}个·到100虚岁·点击切换）</h3><div class="dy-row">${dyCards}</div></div>
 <div class="ly-section" style="margin-bottom:12px"><h3 style="font-size:15px;color:#543;margin-bottom:9px">📅 流年列表（竖向·十维度+解读）</h3>${dyPanels}</div>
@@ -331,26 +349,31 @@ function drawSanfangLines(name){
 }
 function showGong(name){var t=GONG[name];if(!t){return;}document.getElementById('gt').textContent=name+' · 宫象深度解析';var e=function(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');};document.getElementById('gb').innerHTML=e(t);document.getElementById('gmodal').style.display='flex';}
 function closeGong(){document.getElementById('gmodal').style.display='none';}
-function drawChart(items){
-  const area=document.getElementById('chart-area');
+function drawTrend(items){
+  var area=document.getElementById('chart-area');
   if(!items.length){area.innerHTML='<p style="color:#888;padding:16px;text-align:center">该大限无流年数据</p>';return;}
-  const W=860,H=220,pl=34,pr=14,pt=12,pb=24,N=items.length,xs=(W-pl-pr)/(N-1||1),ym=H-pb-(H-pt-pb)/2;
-  const series=[['整体运势','#2c4a63',2.5,l=>DN.reduce((s,d)=>s+(l.d[d]||0),0)],['财官·忌','#b9462f',1.6,l=>['财','父','宅','子','禄','灾'].reduce((s,d)=>s+(l.d[d]||0),0)/6],['印比·喜','#4a7a4e',1.6,l=>['考','身','友'].reduce((s,d)=>s+(l.d[d]||0),0)/3]];
-  const maxAbs=Math.max(...items.flatMap(l=>series.map(([,,,fn])=>Math.abs(fn(l)))),1);
-  const yS=(H-pt-pb)/2/(maxAbs*1.15);
-  const Pt=(i,s)=>(pl+i*xs).toFixed(1)+','+(ym-s*yS).toFixed(1);
-  const ticks=[-1,-.5,0,.5,1].map(m=>Math.round(maxAbs*m*10)/10);
-  const grid=ticks.map(s=>'<line x1="'+pl+'" x2="'+(W-pr)+'" y1="'+(ym-s*yS).toFixed(1)+'" y2="'+(ym-s*yS).toFixed(1)+'" stroke="#eee"/><text x="'+(pl-3)+'" y="'+(ym-s*yS+3).toFixed(1)+'" font-size="8" text-anchor="end" fill="#999">'+s+'</text>').join('');
-  const lines=series.map(([n,c,w,fn])=>'<polyline points="'+items.map((l,i)=>Pt(i,fn(l))).join(' ')+'" fill="none" stroke="'+c+'" stroke-width="'+w+'"/>').join('');
-  const dots=series.map(([n,c,w,fn])=>items.map((l,i)=>{const x=(pl+i*xs).toFixed(1),y=(ym-fn(l)*yS).toFixed(1),v=fn(l).toFixed(1),det=DN.map(d=>d+':'+(l.d[d]>0?'+':'')+l.d[d]).join(' ');return '<circle cx="'+x+'" cy="'+y+'" r="10" fill="'+c+'" fill-opacity="0" stroke="'+c+'" stroke-opacity="0" stroke-width="2" pointer-events="all" class="dot"><title>📅 '+l.y+'年 ['+n+']: '+v+' | '+det+'</title></circle>';}).join('')).join('');
-  const xLab=items.map((l,i)=>'<text x="'+(pl+i*xs).toFixed(0)+'" y="'+(H-pb+11)+'" font-size="8" text-anchor="middle" fill="#999">'+l.y+'</text>').join('');
-  const lg=series.map(([n,c])=>'<span style="color:'+c+';font-size:11px;margin:0 8px;font-weight:600">■'+n+'</span>').join('');
-  area.innerHTML='<div style="text-align:center;margin:3px 0">'+lg+'</div><svg viewBox="0 0 '+W+' '+H+'" style="width:100%;background:#fafafa;border-radius:5px">'+grid+'<line x1="'+pl+'" x2="'+(W-pr)+'" y1="'+ym+'" y2="'+ym+'" stroke="#bbb"/>'+lines+dots+xLab+'</svg><div class="chart-tip" id="ctip" style="display:none"></div>';
-  var svg=area.querySelector('svg');var tip=document.getElementById('ctip');
-  svg.addEventListener('mousemove',function(e){var r=svg.getBoundingClientRect();var sx=W/r.width;var mx=(e.clientX-r.left)*sx;var idx=Math.round((mx-pl)/xs);if(idx<0||idx>=N){tip.style.display='none';return;}var l=items[idx];var h='<b>📅 '+l.y+'年</b>';series.forEach(function(s){h+='<br><span style="color:'+s[1]+'">■</span> '+s[0]+': <b>'+s[3](l).toFixed(1)+'</b>';});var det=DN.map(function(d){return d+':'+(l.d[d]>0?'+':'')+(l.d[d]||0);}).join(' ');h+='<br><span style="font-size:10px;color:#aaa">'+det+'</span>';tip.innerHTML=h;tip.style.display='block';var px=e.clientX-r.left+12;var py=e.clientY-r.top-10;if(px>r.width-220)px=r.width-220;tip.style.left=px+'px';tip.style.top=py+'px';});
-  svg.addEventListener('mouseleave',function(){tip.style.display='none';});
+  var dims=DN.map(function(d){return Array.isArray(d)?d[0]:d;});
+  var pts=items.map(function(l){var sum=dims.reduce(function(s,d){return s+(l.d[d]||0);},0);return {y:l.y,sum:sum};});  // 总分(起伏明显, Y轴各自自适应, 看各自趋势不跨体系比绝对值)
+  var W=860,H=210,pl=38,pr=14,pt=14,pb=26,N=pts.length;
+  var maxAbs=Math.max.apply(null,pts.map(function(p){return Math.abs(p.sum);}).concat([2]));
+  var xs=N>1?(W-pl-pr)/(N-1):0;
+  var ym=H-pb-(H-pt-pb)/2;
+  var ys=(H-pt-pb)/2/(maxAbs*1.15);
+  var line=pts.map(function(p,i){return (pl+i*xs).toFixed(1)+','+(ym-p.sum*ys).toFixed(1);}).join(' ');
+  var dots=pts.map(function(p,i){var x=pl+i*xs,y=ym-p.sum*ys;return '<circle cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="3.5" fill="'+(p.sum>0?'#2e7d32':p.sum<0?'#c62828':'#999')+'"><title>📅 '+p.y+'年 总运势:'+(p.sum>0?'+':'')+p.sum+'</title></circle>';}).join('');
+  var xLab=pts.map(function(p,i){if(N>12&&i%2!==0)return '';return '<text x="'+(pl+i*xs).toFixed(0)+'" y="'+(H-pb+13)+'" font-size="9" text-anchor="middle" fill="#888">'+p.y+'</text>';}).join('');
+  var ticks=[-1,-0.5,0,0.5,1].map(function(m){return Math.round(maxAbs*m*10)/10;});
+  var grid=ticks.map(function(s){return '<line x1="'+pl+'" x2="'+(W-pr)+'" y1="'+(ym-s*ys).toFixed(1)+'" y2="'+(ym-s*ys).toFixed(1)+'" stroke="#eee"/><text x="'+(pl-4)+'" y="'+(ym-s*ys+3).toFixed(1)+'" font-size="8" text-anchor="end" fill="#aaa">'+s+'</text>';}).join('');
+  var curve='<div style="margin-bottom:10px"><div style="font-size:14px;font-weight:700;color:#543;margin-bottom:4px">📈 逐年总运势主线 <span style="font-size:11px;color:#999;font-weight:400">(越高越吉·越低越凶·0线为平·含大限基调叠加)</span></div><svg viewBox="0 0 '+W+' '+H+'" style="width:100%;background:#fafafa;border-radius:5px">'+grid+'<line x1="'+pl+'" x2="'+(W-pr)+'" y1="'+ym+'" y2="'+ym+'" stroke="#bbb"/><polyline points="'+line+'" fill="none" stroke="#4a7a8e" stroke-width="2"/>'+dots+xLab+'</svg></div>';
+  function cell(v){var v2=v>0?'吉':v<0?'凶':'平';var bg2=v2==='吉'?'#e3f2e3':v2==='凶'?'#fbe5e3':'#f0f0f0';var col2=v2==='吉'?'#2e7d32':v2==='凶'?'#c62828':'#999';var sym2=v>0?'▲':v<0?'▼':'·';return '<td style="background:'+bg2+';color:'+col2+';padding:5px 4px;font-weight:700" title="'+(v>0?'+':'')+v+'">'+sym2+'</td>';}
+  var hm='<div style="overflow-x:auto"><table style="border-collapse:collapse;font-size:12px;text-align:center;width:100%;font-family:monospace"><thead><tr style="background:#f8f4ec;color:#543"><th style="padding:5px 6px">流年</th>'+dims.map(function(d){return '<th style="padding:5px 4px;font-weight:700">'+d+'</th>';}).join('')+'</tr></thead><tbody>';
+  items.forEach(function(l){hm+='<tr><td style="padding:5px 6px;font-weight:700;color:#543">'+l.y+'</td>'+dims.map(function(d){return cell(l.d[d]||0);}).join('')+'</tr>';});
+  hm+='</tbody></table></div>';
+  var legend='<div style="margin-top:8px;padding:8px 10px;background:#f8f4ec;border-radius:4px;font-size:11px;color:#543;line-height:1.7"><b>分数 → 吉凶程度</b>（悬停格看具体分，含流年+大限基调×0.5叠加）：<br><b style="color:#1b5e20">+2 及以上 = 大吉</b>（强喜用，顺势发力）｜ <b style="color:#2e7d32">+1 = 吉</b>（喜用）｜ <b>0 = 平</b>（无星或喜忌抵消）｜ <b style="color:#c62828">-1 = 凶</b>（忌神，需防）｜ <b style="color:#8b1a1a">-2 及以下 = 大凶</b>（强忌神，重点防范）</div>';
+  hm='<details style="margin-top:6px"><summary style="cursor:pointer;font-size:13px;color:#4a6a8e;font-weight:600;padding:6px 0">🔍 展开维度明细热力图（每年各维度吉凶 · 悬停看分数）</summary>'+hm+legend+'</details>';
+  area.innerHTML=curve+hm;
 }
-function showDy(dk){document.querySelectorAll('.dy-panel').forEach(p=>p.classList.remove('active'));document.querySelectorAll('.dy-card').forEach(c=>c.classList.remove('active'));document.getElementById('panel-'+dk)?.classList.add('active');document.querySelector('[data-dy="'+dk+'"]')?.classList.add('active');drawChart(ALL.filter(l=>l.ck===dk));}
+function showDy(dk){document.querySelectorAll('.dy-panel').forEach(p=>p.classList.remove('active'));document.querySelectorAll('.dy-card').forEach(c=>c.classList.remove('active'));document.getElementById('panel-'+dk)?.classList.add('active');document.querySelector('[data-dy="'+dk+'"]')?.classList.add('active');drawTrend(ALL.filter(l=>l.ck===dk));}
 showDy('${esc(currentDk)}');
 </script></body></html>`;
 fs.writeFileSync(outPath, html);

@@ -103,12 +103,12 @@ fi
 # ── Step 6: 排盘验证 ──
 if [ ${#ERRORS[@]} -eq 0 ]; then
   echo "🔍 排盘验证..."
-  if node "$SKILL_PATH/scripts/bazi.js" 1993 10 20 19 10 男 >/dev/null 2>&1; then
+  if node "$SKILL_PATH/scripts/bazi.js" 2000 8 16 14 30 男 >/dev/null 2>&1; then
     echo "✅ 八字排盘验证通过"
   else
     echo "⚠ 八字排盘异常（技能可用，建议检查 tyme4ts vendor）"
   fi
-  if node "$SKILL_PATH/scripts/paipan_ziwei.js" 1993-10-20 10 男 >/dev/null 2>&1; then
+  if node "$SKILL_PATH/scripts/paipan_ziwei.js" 2000-08-16 10 男 >/dev/null 2>&1; then
     echo "✅ 紫微排盘验证通过"
   else
     echo "⚠ 紫微排盘异常（技能可用，建议检查 iztro 依赖）"
