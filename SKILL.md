@@ -33,6 +33,10 @@ description: "Use when the user asks for 紫微斗数 / Zi Wei Dou Shu chart rea
 
 6. **两套体系独立**：若用户要求分别用紫微和八字分析，**两份产出互不引用对方术语**——紫微文档不提十神/大运/喜用神；八字文档不提宫位/星曜/四化/大限。定盘时可分别得出结论后对照。
 
+7. **定用神须四参合（八字）**：定真用神须「旺衰 + 格局 + 调候 + 流通」四参合（见 `methods/bazi-method.md` 第五节），**禁止单一旺衰机械判忌**——「缺五行不即忌」，缺/近缺的五行常是补缺、通关、泄秀所需之用（非忌）。引擎 `scripts/bazi_core.js` 的 `BAZI_SIHE` 开关（默认 on）即此四参合复核机制，可 `off` 对照旧旺衰。
+
+8. **趋吉避凶·正向引导（产出口径）**：命理旨在给人希望与出路，非堆砌凶象。吉凶按原理如实推演，但解析必须给"转化路径"——凶运指出该往哪发力、为喜用运蓄什么力（婚姻凶转攻事业、财运凶深耕技术韬光养晦、官杀凶以技术学识化杀），**每个凶配一条出路**；禁绝对化与凶吓表述（用"需注意/宜 X"替代"大凶/必破"）。详见 `methods/bazi-method.md` 第十五节 与 `methods/ziwei-method.md` 第十一节。
+
 ## 标准推演流程
 
 ```dot
@@ -73,9 +77,11 @@ digraph flow {
 ziwei-bazi-reading/
 ├── SKILL.md            # 本文件：入口 / 铁律 / 流程
 ├── methods/            # 推演方法论（紫微、八字各自独立，互不引用术语）
-│   ├── methods/ziwei-method.md
-│   ├── methods/bazi-method.md
-│   └── methods/heming-method.md   # 合盘/婚配/合作配对专题（按需 Read）
+│   ├── ziwei-method.md
+│   ├── bazi-method.md
+│   ├── bazi-classics.md    # 八字古籍深论(格局/形性/寿元/女命/太岁/纳音/空亡·按需Read)
+│   ├── ziwei-classics.md   # 紫微古籍深论(庙旺12宫/赋文/形性/格局成败/小限斗君·按需Read)
+│   └── heming-method.md   # 合盘/婚配/合作配对专题（按需 Read）
 ├── corpus/             # 天纪倪师原话语料库 + 通识古诀（按需 Read，引用时溯源）
 │   ├── verified/       # 倪师《天纪》原话（带集数出处）
 │   ├── traditional/    # 紫微通识古诀（非倪师独创）
@@ -104,8 +110,30 @@ ziwei-bazi-reading/
 
 **全流程数据流（紫微 + 八字均已打通）**：生辰 → `scripts/paipan_ziwei.js`（紫微 / iztro）或 `scripts/bazi.js`（八字 / tyme4ts+自研关系·神煞层）→ 结构化命盘 JSON → `methods/*`（推演）→ `templates/*`（渲染）。两引擎均已 vendor 内置、离线可用；脚本缺失时由用户提供排盘数据。**按需 Read** methods/ 与 corpus/ 对应文件，勿全量加载。引用倪师原话或古诀时查 `corpus/verified/`（倪师《天纪》原话，带集数出处）与 `corpus/traditional/`（通识古诀），确保引述准确、出处可溯。
 
-- **紫微斗数推演**：`methods/methods/ziwei-method.md`（独立体系，含十二宫、四化、大限流年、六维分析、格局速查）
-- **八字命理推演**：`methods/methods/bazi-method.md`（独立体系，含四柱十神、旺衰喜用、大运流年、应吉应凶、六亲对应）
+- **紫微斗数推演**：`methods/ziwei-method.md`（独立体系，含十二宫、四化、大限流年、六维分析、格局速查）
+- **八字命理推演**：`methods/bazi-method.md`（独立体系，含四柱十神、旺衰喜用、大运流年、应吉应凶、六亲对应；**定用神四参合见第五节**）
+
+## 📂 workspace 工作目录（产出统一管理）
+
+所有生成产出（命书/运势/合盘 HTML + 解读 JSON）默认写入 **workspace 工作目录**，集中管理、不散落、不入 git（`.gitignore` 已忽略 `workspace/` 与 `scripts/_*.json`）。
+
+**路径解析优先级**（高 → 低，见 `scripts/_workspace.js`）：
+1. 环境变量 `ZIWEI_WORKSPACE`
+2. 项目级：技能根下 `.ziwei-workspace`（纯文本，一行路径）
+3. 用户级：`~/.ziwei-workspace`（纯文本，一行路径）
+4. 默认：`<技能根>/workspace`（项目级未配置时，在当前项目下创建）
+
+**配置方法**：
+- 临时/全局：`ZIWEI_WORKSPACE=/path/to/ws node scripts/gen_*.js ...`
+- 项目级：技能根建 `.ziwei-workspace` 文件，写一行路径（相对路径相对技能根）
+- 用户级：`~/.ziwei-workspace` 写一行路径（多项目共用同一 workspace 时用）
+
+**使用**：跑 `gen_*_html` 脚本**无需传输出路径**，默认自动入 workspace；解读 JSON 也建议放 workspace（`ensureWorkspace()` 自动建目录）。示例：
+```bash
+# 命书默认入 workspace（outPath 留空用默认）
+node scripts/gen_bazi_full_html.js 2000 8 16 14 30 男 1994 2080 "" workspace/_interp.json workspace/_liunian.json
+# → <workspace>/八字命书-2000.html
+```
 
 ## 应事法定时辰（通用核心）
 

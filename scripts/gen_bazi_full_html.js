@@ -6,6 +6,8 @@
  * 用法: node gen_bazi_full_html.js <Y> <M> <D> <H> <MIN> <男|女> [起年] [止年] [输出.html] [解读.json]
  */
 const path = require('path'), fs = require('fs');
+const { ensureWorkspace } = require('./_workspace');
+const WS = ensureWorkspace();
 const T = require(path.join(__dirname, 'vendor/tyme4ts/dist/lib/index.cjs'));
 const { SolarTime, Gender } = T;
 const { analyzeZhiRelations, analyzeGanRelations } = require(path.join(__dirname, 'vendor/bazi/bazi_relations.js'));
@@ -13,9 +15,27 @@ const { analyzeShensha } = require(path.join(__dirname, 'vendor/bazi/shensha.js'
 const { analyze, kongWang, ZHI_MAIN } = require('./bazi_core');
 
 const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-const DIMS = ['妻','财','子','禄','父','身','友','考','宅','灾'];
-const INTERP = {'财凶':'破财/收入波动/投资损;父辈耗;感情波折','灾凶':'健康/血光/意外;官非压力','子凶':'子女事谨慎/胎停(若孕育);健康克身','禄凶':'事业压力/受克/变动','考吉':'学业/资质/深造/文凭;长辈贵人','身凶':'健康透支/过劳/精力降','身吉':'精力充沛/安顿','禄吉':'晋升/掌权/地位','财吉':'得财/理财机遇/置业','考凶':'学业受阻/文书不利','友吉':'合作得力/人际助/担财','友凶':'竞争/劫财/口舌','妻凶':'感情波折/妻事不顺','宅凶':'房产波折/家宅耗','父凶':'父辈健康/家耗'};
+const DIMS = ['妻','财','子','禄','父','身','友','考','宅','灾','艺'];
+const INTERP = {'财凶':'破财/收入波动/投资损;父辈耗;感情波折','灾凶':'健康/血光/意外;官非压力','子凶':'子女事谨慎/胎停(若孕育);健康克身','禄凶':'事业压力/受克/变动','考吉':'学业/资质/深造/文凭;长辈贵人','身凶':'健康透支/过劳/精力降','身吉':'精力充沛/安顿','禄吉':'晋升/掌权/地位','财吉':'得财/理财机遇/置业','考凶':'学业受阻/文书不利','友吉':'合作得力/人际助/担财','友凶':'竞争/劫财/口舌','妻凶':'感情波折/妻事不顺','宅凶':'房产波折/家宅耗','父凶':'父辈健康/家耗','艺吉':'技艺施展/创新突破/才华得利','艺凶':'才华受抑/技艺瓶颈/劳神'};
 const interpret = d => DIMS.map(k => INTERP[k+d[k].verdict]).filter(Boolean).join('；');
+// 流年LLM解读: 大运基调(十年环境) × 流年应事(逐年触发) + 叠加提示(动态)
+const interpretLN = l => {
+  const dy = l.dayunDims || {};
+  const dx = DIMS.filter(k=>dy[k]&&dy[k].verdict==='凶').slice(0,3);
+  const dj = DIMS.filter(k=>dy[k]&&dy[k].verdict==='吉').slice(0,3);
+  const lx = DIMS.filter(k=>l.baziDims[k].verdict==='凶');
+  const lj = DIMS.filter(k=>l.baziDims[k].verdict==='吉');
+  const p=[];
+  if(dx.length) p.push(`〔${l.dayun}运·忌神基调:${dx.join('/')}〕`);
+  if(dj.length) p.push(`〔${l.dayun}运·喜用基调:${dj.join('/')}〕`);
+  if(lx.length) p.push('流年应凶:'+lx.join('/'));
+  if(lj.length) p.push('流年应吉:'+lj.join('/'));
+  if(dx.length&&lj.length) p.push('忌神运逢喜用流年·吉气打折');
+  if(dj.length&&lx.length) p.push('喜用运逢忌神流年·凶势减轻');
+  if(dx.length&&lx.length) p.push('忌运+忌年·凶叠加需防');
+  if(dj.length&&lj.length) p.push('喜运+喜年·吉上添吉');
+  return p.join('；')||'平稳';
+};
 const GAN_WX = {甲:'木',乙:'木',丙:'火',丁:'火',戊:'土',己:'土',庚:'金',辛:'金',壬:'水',癸:'水'};
 const isMan = g => g==='男'||g==='man'||g==='M';
 
@@ -57,11 +77,11 @@ if (argv.length >= 6) {
   [Y,Mo,D,H,MIN] = argv.slice(0,5).map(Number); gender = argv[5];
   startYear = argv[6] ? Number(argv[6]) : 1994;
   endYear   = argv[7] ? Number(argv[7]) : (Y+99);
-  outPath   = argv[8] || `八字命书-${Y}.html`;
+  outPath   = argv[8] || path.join(WS, `八字命书-${Y}.html`);
   interpPath = argv[9] || '';
   liunianJiePath = argv[10] || '';
 } else {
-  Y=1993;Mo=10;D=20;H=19;MIN=10;gender='男';startYear=1994;endYear=Y+99;outPath='八字命书-1993.html';interpPath='';liunianJiePath='';
+  Y=2000;Mo=8;D=16;H=14;MIN=30;gender='男';startYear=1994;endYear=Y+99;outPath=path.join(WS,'八字命书-2000.html');interpPath='';liunianJiePath='';
   console.error('[demo]→'+outPath);
 }
 
@@ -130,7 +150,7 @@ const interpBlock = [
 
 const byDy = {}; r.liunian.forEach(l => { (byDy[l.dayun]=byDy[l.dayun]||[]).push(l); });
 const currentDy = (r.liunian.find(l=>l.year===2026) || {dayun:c.daYun[0]&&c.daYun[0].ganzhi}).dayun;
-const allData = JSON.stringify(r.liunian.map(l => ({y:l.year, dy:l.dayun, d:Object.fromEntries(DIMS.map(k=>[k,l.baziDims[k].score]))})));
+const allData = JSON.stringify(r.liunian.map(l => ({y:l.year, dy:l.dayun, d:Object.fromEntries(DIMS.map(k=>[k, (l.baziDims[k].score||0) + ((l.dayunDims&&l.dayunDims[k])?l.dayunDims[k].score:0)*0.5]))})));  // 热力图: 流年维度 + 大运基调×0.5 (大运定十年环境×流年定逐年应事)
 const advice = d => { const x=DIMS.filter(k=>d[k].verdict==='凶'), j=DIMS.filter(k=>d[k].verdict==='吉'), a=[]; if(x.length)a.push('⚠'+x.join('/')); if(j.length)a.push('✓'+j.join('/')); return a.join(' ')||'平稳'; };
 const dyCards = c.daYun.filter(d=>Number(d.ages.split('-')[1])<=100).map(d => {
   const isNow = d.ganzhi===currentDy;
@@ -145,9 +165,10 @@ const dyPanels = c.daYun.filter(d=>Number(d.ages.split('-')[1])<=100).map(d => {
       const b = l.dayunDims && l.dayunDims[k] ? l.dayunDims[k].verdict : '平';
       const c2 = l.baziDims[k].verdict;
       const a = (b==='凶'&&c2==='凶')?'大凶':(b==='吉'&&c2==='吉')?'大吉':c2;
-      return `<span class="dim-badge d-${a==='大凶'?'凶':a==='大吉'?'吉':a}" title="大运${b}·流年${c2}">${k}</span>`;
+      const note = l.baziDims[k]._ ? '·'+l.baziDims[k]._ : '';
+      return `<span class="dim-badge d-${a==='大凶'?'凶':a==='大吉'?'吉':a}" title="大运${b}·流年${c2}${note}">${k}</span>`;
     }).join('');
-    const lText = lyJie(l.year) ? `🔮 ${esc(lyJie(l.year))}` : `🔮 ${esc(interpret(l.baziDims)||'平稳年')}`;
+    const lText = lyJie(l.year) ? `🔮 ${esc(lyJie(l.year))}` : `🔮 ${esc(interpretLN(l))}`;
     return `<div class="ly-row"><span class="ly-year">${l.year}</span><span class="ly-gz">${esc(l.taiSui)}</span><span class="ly-age">${l.age}岁</span><span class="ly-vd v-${l.verdict}">${l.verdict}</span><span class="dim-row">${badges}</span><span class="ly-adv">${esc(advice(l.baziDims))}</span></div><div class="ly-interp">${lText}</div>`;
   }).join('');
   return `<div class="dy-panel" id="panel-${esc(d.ganzhi)}">${rows||'<p class="empty">该大运范围外(无流年数据)</p>'}</div>`;
@@ -257,40 +278,47 @@ section{background:#fff;border:1px solid var(--line);border-radius:8px;padding:1
 ${interpBlock || '<p class="empty">（未提供解读.json，解析区为空。命盘与运势已自动生成。）</p>'}
 </section>
 
-<section><div class="chart-title">📊 运势折线图（整体/财官/印比 · 点击大运联动 · 鼠标悬停看明细）</div><div id="chart-area"></div></section>
+<section><div class="chart-title">📊 逐年运势（主线默认展开 · 维度明细可折叠）</div><div id="chart-area"></div></section>
 
 <div class="dy-section" style="margin-bottom:12px"><h3 style="font-size:15px;color:#555;margin-bottom:7px">🔄 大运（${c.daYun.filter(d=>Number(d.ages.split('-')[1])<=100).length}步·到100虚岁·点击切换）</h3><div class="dy-row">${dyCards}</div></div>
-<div class="ly-section" style="margin-bottom:12px"><h3 style="font-size:15px;color:#555;margin-bottom:9px">📅 流年列表（竖向·十维度+大运基调叠加+解读）</h3>${dyPanels}</div>
+<div class="ly-section" style="margin-bottom:12px"><h3 style="font-size:15px;color:#555;margin-bottom:9px">📅 流年列表（竖向·十一维度·含食伤(艺)+大运基调叠加+解读）</h3>${dyPanels}</div>
 
 <div class="disclaim"><b>⚠ 免责声明</b>：本命盘数据由 tyme4ts+关系层+神煞层 算法自动推算；解析部分为基于命理技法的大语言模型解读，标注依据与置信度。命理学属传统文化，<b>并非实证科学，不具备经科学验证的预测能力</b>。所有吉凶判断、时间范围与建议，<b>仅适用于文化研究、自我觉察与娱乐参考，不替代专业医疗/心理/法律/投资/婚姻决策</b>。理性看待、积极生活。</div>
 </div>
 <script>
 const ALL=${allData};const DN=${JSON.stringify(DIMS)};
-function drawChart(items){
-  const area=document.getElementById('chart-area');
+function drawTrend(items){
+  var area=document.getElementById('chart-area');
   if(!items.length){area.innerHTML='<p style="color:#888;padding:16px;text-align:center">该大运无流年数据</p>';return;}
-  const W=860,H=220,pl=34,pr=14,pt=12,pb=24,N=items.length,xs=(W-pl-pr)/(N-1||1),ym=H-pb-(H-pt-pb)/2;
-  const series=[['整体运势','#2c4a63',2.5,l=>DN.reduce((s,d)=>{const v=l.d[d]||0;return s+(v>0?1:v<0?-1:0);},0)],['财官·忌','#b9462f',1.6,l=>['财','父','宅','子','禄','灾'].reduce((s,d)=>s+(l.d[d]||0),0)/6],['印比·喜','#4a7a4e',1.6,l=>['考','身','友'].reduce((s,d)=>s+(l.d[d]||0),0)/3]];
-  const maxAbs=Math.max(...items.flatMap(l=>series.map(([,,,fn])=>Math.abs(fn(l)))),1);
-  const ys=(H-pt-pb)/2/(maxAbs*1.15);
-  const P=(i,s)=>(pl+i*xs).toFixed(1)+','+(ym-s*ys).toFixed(1);
-  const ticks=[-1,-.5,0,.5,1].map(m=>Math.round(maxAbs*m*10)/10);
-  const grid=ticks.map(s=>'<line x1="'+pl+'" x2="'+(W-pr)+'" y1="'+(ym-s*ys).toFixed(1)+'" y2="'+(ym-s*ys).toFixed(1)+'" stroke="#eee"/><text x="'+(pl-3)+'" y="'+(ym-s*ys+3).toFixed(1)+'" font-size="8" text-anchor="end" fill="#999">'+s+'</text>').join('');
-  const lines=series.map(([n,c,w,fn])=>'<polyline points="'+items.map((l,i)=>P(i,fn(l))).join(' ')+'" fill="none" stroke="'+c+'" stroke-width="'+w+'"/>').join('');
-  const dots=series.map(([n,c,w,fn])=>items.map((l,i)=>{const x=(pl+i*xs).toFixed(1),y=(ym-fn(l)*ys).toFixed(1),v=fn(l).toFixed(1),det=DN.map(d=>d+':'+(l.d[d]>0?'+':'')+l.d[d]).join(' ');return '<circle cx="'+x+'" cy="'+y+'" r="10" fill="'+c+'" fill-opacity="0" stroke="'+c+'" stroke-opacity="0" stroke-width="2" pointer-events="all" class="dot"><title>📅 '+l.y+'年 ['+n+']: '+v+' | '+det+'</title></circle>';}).join('')).join('');
-  const xLab=items.map((l,i)=>'<text x="'+(pl+i*xs).toFixed(0)+'" y="'+(H-pb+11)+'" font-size="8" text-anchor="middle" fill="#999">'+l.y+'</text>').join('');
-  const lg=series.map(([n,c])=>'<span style="color:'+c+';font-size:11px;margin:0 8px;font-weight:600">■'+n+'</span>').join('');
-  area.innerHTML='<div style="text-align:center;margin:3px 0">'+lg+'</div><svg viewBox="0 0 '+W+' '+H+'" style="width:100%;background:#fafafa;border-radius:5px">'+grid+'<line x1="'+pl+'" x2="'+(W-pr)+'" y1="'+ym+'" y2="'+ym+'" stroke="#bbb"/>'+lines+dots+xLab+'</svg><div class="chart-tip" id="ctip" style="display:none"></div>';
-  var svg=area.querySelector('svg');var tip=document.getElementById('ctip');
-  svg.addEventListener('mousemove',function(e){var r=svg.getBoundingClientRect();var sx=W/r.width;var mx=(e.clientX-r.left)*sx;var idx=Math.round((mx-pl)/xs);if(idx<0||idx>=N){tip.style.display='none';return;}var l=items[idx];var h='<b>📅 '+l.y+'年</b>';series.forEach(function(s){h+='<br><span style="color:'+s[1]+'">■</span> '+s[0]+': <b>'+s[3](l).toFixed(1)+'</b>';});var det=DN.map(function(d){return d+':'+(l.d[d]>0?'+':'')+(l.d[d]||0);}).join(' ');h+='<br><span style="font-size:10px;color:#aaa">'+det+'</span>';tip.innerHTML=h;tip.style.display='block';var px=e.clientX-r.left+12;var py=e.clientY-r.top-10;if(px>r.width-220)px=r.width-220;tip.style.left=px+'px';tip.style.top=py+'px';});
-  svg.addEventListener('mouseleave',function(){tip.style.display='none';});
+  var dims=DN.map(function(d){return Array.isArray(d)?d[0]:d;});
+  // 1. 逐年总运势曲线(默认展开): 每年各维度总分→SVG折线
+  var pts=items.map(function(l){var sum=dims.reduce(function(s,d){return s+(l.d[d]||0);},0);return {y:l.y,sum:sum};});  // 总分(起伏明显, Y轴各自自适应, 看各自趋势不跨体系比绝对值)
+  var W=860,H=210,pl=38,pr=14,pt=14,pb=26,N=pts.length;
+  var maxAbs=Math.max.apply(null,pts.map(function(p){return Math.abs(p.sum);}).concat([2]));
+  var xs=N>1?(W-pl-pr)/(N-1):0;
+  var ym=H-pb-(H-pt-pb)/2;
+  var ys=(H-pt-pb)/2/(maxAbs*1.15);
+  var line=pts.map(function(p,i){return (pl+i*xs).toFixed(1)+','+(ym-p.sum*ys).toFixed(1);}).join(' ');
+  var dots=pts.map(function(p,i){var x=pl+i*xs,y=ym-p.sum*ys;return '<circle cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="3.5" fill="'+(p.sum>0?'#2e7d32':p.sum<0?'#c62828':'#999')+'"><title>📅 '+p.y+'年 总运势:'+(p.sum>0?'+':'')+p.sum+'</title></circle>';}).join('');
+  var xLab=pts.map(function(p,i){if(N>12&&i%2!==0)return '';return '<text x="'+(pl+i*xs).toFixed(0)+'" y="'+(H-pb+13)+'" font-size="9" text-anchor="middle" fill="#888">'+p.y+'</text>';}).join('');
+  var ticks=[-1,-0.5,0,0.5,1].map(function(m){return Math.round(maxAbs*m*10)/10;});
+  var grid=ticks.map(function(s){return '<line x1="'+pl+'" x2="'+(W-pr)+'" y1="'+(ym-s*ys).toFixed(1)+'" y2="'+(ym-s*ys).toFixed(1)+'" stroke="#eee"/><text x="'+(pl-4)+'" y="'+(ym-s*ys+3).toFixed(1)+'" font-size="8" text-anchor="end" fill="#aaa">'+s+'</text>';}).join('');
+  var curve='<div style="margin-bottom:10px"><div style="font-size:14px;font-weight:700;color:#543;margin-bottom:4px">📈 逐年总运势主线 <span style="font-size:11px;color:#999;font-weight:400">(越高越吉·越低越凶·0线为平·含大运基调叠加)</span></div><svg viewBox="0 0 '+W+' '+H+'" style="width:100%;background:#fafafa;border-radius:5px">'+grid+'<line x1="'+pl+'" x2="'+(W-pr)+'" y1="'+ym+'" y2="'+ym+'" stroke="#bbb"/><polyline points="'+line+'" fill="none" stroke="#4a7a8e" stroke-width="2"/>'+dots+xLab+'</svg></div>';
+  // 2. 维度明细热力图(默认折叠) + 分数图例
+  function cell(v){var v2=v>0?'吉':v<0?'凶':'平';var bg2=v2==='吉'?'#e3f2e3':v2==='凶'?'#fbe5e3':'#f0f0f0';var col2=v2==='吉'?'#2e7d32':v2==='凶'?'#c62828':'#999';var sym2=v>0?'▲':v<0?'▼':'·';return '<td style="background:'+bg2+';color:'+col2+';padding:5px 4px;font-weight:700" title="'+(v>0?'+':'')+v+'">'+sym2+'</td>';}
+  var hm='<div style="overflow-x:auto"><table style="border-collapse:collapse;font-size:12px;text-align:center;width:100%;font-family:monospace"><thead><tr style="background:#f8f4ec;color:#543"><th style="padding:5px 6px">流年</th>'+dims.map(function(d){return '<th style="padding:5px 4px;font-weight:700">'+d+'</th>';}).join('')+'</tr></thead><tbody>';
+  items.forEach(function(l){hm+='<tr><td style="padding:5px 6px;font-weight:700;color:#543">'+l.y+'</td>'+dims.map(function(d){return cell(l.d[d]||0);}).join('')+'</tr>';});
+  hm+='</tbody></table></div>';
+  var legend='<div style="margin-top:8px;padding:8px 10px;background:#f8f4ec;border-radius:4px;font-size:11px;color:#543;line-height:1.7"><b>分数 → 吉凶程度</b>（悬停格看具体分，含流年+大运基调×0.5叠加）：<br><b style="color:#1b5e20">+2 及以上 = 大吉</b>（强喜用，顺势发力）｜ <b style="color:#2e7d32">+1 = 吉</b>（喜用）｜ <b>0 = 平</b>（无星或喜忌抵消）｜ <b style="color:#c62828">-1 = 凶</b>（忌神，需防）｜ <b style="color:#8b1a1a">-2 及以下 = 大凶</b>（强忌神，重点防范）</div>';
+  hm='<details style="margin-top:6px"><summary style="cursor:pointer;font-size:13px;color:#4a6a8e;font-weight:600;padding:6px 0">🔍 展开维度明细热力图（每年各维度吉凶 · 悬停看分数）</summary>'+hm+legend+'</details>';
+  area.innerHTML=curve+hm;
 }
 function showDy(gz){
   document.querySelectorAll('.dy-panel').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.dy-card').forEach(c=>c.classList.remove('active'));
   document.getElementById('panel-'+gz)?.classList.add('active');
   document.querySelector('[data-dy="'+gz+'"]')?.classList.add('active');
-  drawChart(ALL.filter(l=>l.dy===gz));
+  drawTrend(ALL.filter(l=>l.dy===gz));
 }
 showDy('${esc(currentDy)}');
 </script></body></html>`;

@@ -3,6 +3,8 @@
  * 紫微运势 v3 —— ①折线图Y轴自适应(不超界) ②加解读(interp) ③大限到100岁 ④流年竖向
  */
 const path=require('path'),fs=require('fs');
+const { ensureWorkspace } = require('./_workspace');
+const WS = ensureWorkspace();
 const {astro}=require(path.join(__dirname,'vendor/iztro/lib/index.js'));
 const DIMS=[['妻','夫妻'],['财','财帛'],['子','子女'],['禄','官禄'],['父','父母'],['身','命宫'],['友','仆役'],['考','官禄'],['宅','田宅'],['灾','疾厄']];
 const JI=new Set(['左辅','右弼','天魁','天钺','文昌','文曲','禄存','流禄','流喜','流魁','流钺','年解']);
@@ -14,8 +16,8 @@ const INTERP={'财凶':'破财/收入波动;父辈耗','灾凶':'健康/血光/�
 const interpret=d=>DIMS.map(([k])=>INTERP[k+d[k].verdict]).filter(Boolean).join('；');
 const argv=process.argv.slice(2);
 let dateStr,timeIdx,gender,startYear,endYear,outPath;
-if(argv.length>=3){[dateStr,timeIdx,gender]=argv;timeIdx=Number(timeIdx);startYear=argv[3]?Number(argv[3]):1994;endYear=argv[4]?Number(argv[4]):(Number(dateStr.split('-')[0])+99);outPath=argv[5]||`紫微运势-${dateStr.split('-')[0]}.html`;}
-else{dateStr='1993-XX-XX';timeIdx=10;gender='男';startYear=1994;endYear=2092;outPath='紫微运势-1993.html';console.error(`[demo]→${outPath}`);}
+if(argv.length>=3){[dateStr,timeIdx,gender]=argv;timeIdx=Number(timeIdx);startYear=argv[3]?Number(argv[3]):1994;endYear=argv[4]?Number(argv[4]):(Number(dateStr.split('-')[0])+99);outPath=argv[5]||path.join(WS,`紫微运势-${dateStr.split('-')[0]}.html`);}
+else{dateStr='2000-08-16';timeIdx=10;gender='男';startYear=1994;endYear=2092;outPath=path.join(WS,'紫微运势-2000.html');console.error(`[demo]→${outPath}`);}
 const a=astro.bySolar(dateStr,timeIdx,gender,true,'zh-CN');
 const birthYear=Number(dateStr.split('-')[0]);
 // ③大限到100岁(filter ages<=100)
