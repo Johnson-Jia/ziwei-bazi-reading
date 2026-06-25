@@ -159,6 +159,9 @@ const data = [], byDy = {};
 for (let y=startYear; y<=endYear; y++) {
   const h = a.horoscope(new Date(`${y}-06-01`));
   const dec = h.decadal, yi = h.yearly;
+  if (!dec) continue;
+  const _xs = y - birthYear + 1, _start = daXians[0] ? parseInt(daXians[0].ages) : 5;
+  if (_xs < _start || _xs > 100) continue;   // 起运前/超100岁:iztro horoscope 返回错大限(1994虚岁2误归庚申),按虚岁过滤
   const dk = dec.heavenlyStem + dec.earthlyBranch;
   const liuMing = a.palaces[yi.palaceNames.indexOf('命宫')] ? a.palaces[yi.palaceNames.indexOf('命宫')].earthlyBranch : '?';
   const dims = {}; const dxDims={}; DIMS.forEach(([d,pn]) => { const ly=judgeDim(a,yi,pn), dx=judgeDim(a,dec,pn); const sc=ly.score+dx.score*0.5; dims[d]={verdict:sc>0?'吉':sc<0?'凶':'平', score:+sc.toFixed(1)}; dxDims[d]=dx; });  // 流年宫象 + 大限基调×0.5
