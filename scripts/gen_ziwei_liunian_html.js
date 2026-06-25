@@ -6,10 +6,10 @@ const path=require('path'),fs=require('fs');
 const { ensureWorkspace } = require('./_workspace');
 const WS = ensureWorkspace();
 const {astro}=require(path.join(__dirname,'vendor/iztro/lib/index.js'));
-const DIMS=[['妻','夫妻'],['财','财帛'],['子','子女'],['禄','官禄'],['父','父母'],['身','命宫'],['友','仆役'],['考','官禄'],['宅','田宅'],['灾','疾厄']];
-const JI=new Set(['左辅','右弼','天魁','天钺','文昌','文曲','禄存','流禄','流喜','流魁','流钺','年解']);
-const SHA=new Set(['擎羊','陀罗','火星','铃星','地空','地劫','流羊','流陀','天刑','阴煞']);
-function judgeDim(a,y,pn){const pIdx=y.palaceNames.indexOf(pn);if(pIdx<0)return{verdict:'平',score:0};const o=a.palaces[pIdx],liu=y.stars[pIdx]||[];let ji=0,x=0;(o.majorStars||[]).forEach(s=>{if(['庙','旺'].includes(s.brightness))ji++;else if(s.brightness==='陷')x++;if(s.mutagen==='禄'||s.mutagen==='科')ji++;else if(s.mutagen==='忌')x++;else if(s.mutagen==='权')ji+=.5;});[...(o.minorStars||[]),...(o.adjectiveStars||[]),...liu].forEach(s=>{if(JI.has(s.name))ji++;if(SHA.has(s.name))x++;});[['禄',y.mutagen[0]],['权',y.mutagen[1]],['科',y.mutagen[2]],['忌',y.mutagen[3]]].forEach(([t,st])=>{if(st&&(o.majorStars||[]).some(s=>s.name===st)){if(t==='禄'||t==='科')ji++;else if(t==='忌')x++;else ji+=.5;}});const sc=ji-x;return{verdict:sc>0?'吉':sc<0?'凶':'平',score:+sc.toFixed(1)};}
+// 星曜分类/打分逻辑统一至 _ziwei_common(流年运势:WEIGHT_LIU + 计入流年虚吉星)
+const _Z=require('./_ziwei_common');
+const {DIMS,WEIGHT_LIU}=_Z;
+const judgeDim=(a,y,pn)=>_Z.judgeDim(a,y,pn,{weight:WEIGHT_LIU,withLiu:true});
 const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 // 🔮 解读表(同八字,基于预测指引)
 const INTERP={'财凶':'破财/收入波动;父辈耗','灾凶':'健康/血光/意外','子凶':'子女事谨慎;胎停(若孕育)','禄凶':'事业压力/变动','考吉':'学业/资质/深造;贵人','身凶':'过劳/精力降','身吉':'精力充沛/安顿','禄吉':'晋升/掌权','财吉':'得财/理财机遇','考凶':'学业受阻','友吉':'合作得力/担财','友凶':'竞争/劫财/口舌','妻凶':'感情波折','宅凶':'房产波折','父凶':'父辈健康/家耗'};
