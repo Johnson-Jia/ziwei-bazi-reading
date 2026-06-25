@@ -23,7 +23,7 @@
 ## ✅ 紫微：paipan_ziwei.js（iztro）
 
 ```bash
-node scripts/paipan_ziwei.js                            # 演示命主 1993-10-20 戌时 男
+node scripts/paipan_ziwei.js                            # 演示(通用示例) 2000-08-16 戌时 男
 node scripts/paipan_ziwei.js 2000-8-16 2 女 true zh-CN  # 任意(参数: 日期 时辰0-12 性别 闰月 语言)
 ```
 - 时辰序号：0早子…10戌…12晚子
@@ -32,7 +32,7 @@ node scripts/paipan_ziwei.js 2000-8-16 2 女 true zh-CN  # 任意(参数: 日期
 ## ✅ 八字：bazi.js（tyme4ts + 关系层 + 神煞层）
 
 ```bash
-node scripts/bazi.js                          # 演示命主 1993-10-20 19:10 男
+node scripts/bazi.js                          # 演示(通用示例) 2000-08-16 14:30 男
 node scripts/bazi.js 1985 10 15 14 30 男      # 任意(参数: 年 月 日 时 分 性别; tyme4ts按精确时分自动定时辰)
 ```
 - 三层架构：**tyme4ts**（四柱/十神/藏干/地势/胎元命宫身宫/精确节气起运/大运）+ **bazi_relations**（三合/六合/冲/刑/害/破/天干合冲）+ **shensha**（15 命局神煞）
@@ -42,7 +42,7 @@ node scripts/bazi.js 1985 10 15 14 30 男      # 任意(参数: 年 月 日 时 
 ## ✅ 八字流年逐年断：bazi_liunian.js
 
 ```bash
-node scripts/bazi_liunian.js                                  # 演示命主 流年2012-2035
+node scripts/bazi_liunian.js                                  # 演示(通用示例) 流年2012-2035
 node scripts/bazi_liunian.js 1985 10 15 14 30 男 2000 2030    # 任意生辰 + 年份范围
 ```
 - tyme4ts 取**流年太岁干支 / 虚岁 / 所在大运 / 流年支与命局关系**；自研层做 **旺衰判定 → 喜用忌神 → 流年干支十神 → 吉凶**
@@ -53,7 +53,7 @@ node scripts/bazi_liunian.js 1985 10 15 14 30 男 2000 2030    # 任意生辰 + 
 ## ✅ 流年表 HTML 生成：gen_liunian_html.js
 
 ```bash
-node scripts/gen_liunian_html.js 1993 10 20 19 10 男 2012 2035 八字流年-1993.html
+node scripts/gen_liunian_html.js 2000 8 16 14 30 男 2012 2035 八字流年-2000.html
 # → 生成单文件内联 CSS 的流年表 HTML（青蓝水墨风，吉/凶/平行底色编码，浏览器直接打开）
 ```
 - 含命局概览卡（四柱/日主/旺衰/喜用忌神/起运/大运）、流年逐年表（太岁/干支十神喜忌/判定/流年支关系）、吉凶分布统计、免责声明
@@ -86,8 +86,8 @@ node scripts/gen_heming_ziwei_html.js 1990-3-15 3 男 1992-8-20 9 女
 # → 紫微合盘-1990×1992.html（双方关键宫联参+太阳太阴+四化互参+LLM五步法注入）
 
 # 八字合盘（A/B 各: 年 月 日 时 分 性别）
-node scripts/gen_heming_bazi_html.js 1993 10 20 19 10 男 1995 5 8 14 0 女
-# → 八字合盘-1993×1995.html（双方四柱+日主十神关系+纳音生克+神煞对比+LLM合婚注入）
+node scripts/gen_heming_bazi_html.js 2000 8 16 14 30 男 1995 5 8 14 0 女
+# → 八字合盘-2000×1995.html（双方四柱+日主十神关系+纳音生克+神煞对比+LLM合婚注入）
 ```
 
 - 两个脚本均 **vendor 离线**、双体系各自独立（紫微合盘不提十神、八字合盘不提宫位）
@@ -172,8 +172,8 @@ node scripts/gen_heming_bazi_html.js 1993 10 20 19 10 男 1995 5 8 14 0 女
 
 ## 验证记录
 
-- 紫微：1993-10-20 戌时男 ↔ 文墨天机 100% 一致
-- 八字：1993-10-20 19:10 男 ↔ 文墨天机/问真八字（四柱/起运虚岁5/大运分段全吻合），关系层自检、神煞层自检均通过
+- 紫微：2000-08-16 戌时男 ↔ 文墨天机 100% 一致
+- 八字：2000-08-16 14:30 男 ↔ 文墨天机/问真八字（四柱/起运虚岁5/大运分段全吻合），关系层自检、神煞层自检均通过
 
 ## 设计约定
 

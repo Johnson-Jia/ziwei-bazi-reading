@@ -4,7 +4,7 @@
  * 每个流年输出: 妻/财/子/禄/父/身/友/考/宅/灾 十领域吉凶(紫微流年宫位+原局星+流年星+流年四化)
  *
  * 用法: node ziwei_liunian.js <YYYY-M-D> <时辰0-12> <男|女> [起年] [止年]
- *   无参数: 演示命主 1993-10-20 戌时(10) 男 2012-2035
+ *   无参数: 演示(通用示例) 2000-08-16 戌时(10) 男 2012-2035
  */
 const path = require('path');
 const { astro } = require(path.join(__dirname, 'vendor/iztro/lib/index.js'));
@@ -59,8 +59,8 @@ if (argv.length >= 3) {
   [dateStr, timeIdx, gender] = argv; timeIdx = Number(timeIdx);
   startYear = argv[3] ? Number(argv[3]) : 1994; endYear = argv[4] ? Number(argv[4]) : 2075;
 } else {
-  dateStr = '1993-10-20'; timeIdx = 10; gender = '男'; startYear = 2012; endYear = 2035;
-  console.error(`[demo] 演示命主 ${dateStr} 戌时 男, 流年 ${startYear}-${endYear}`);
+  dateStr = '2000-08-16'; timeIdx = 10; gender = '男'; startYear = 2012; endYear = 2035;
+  console.error(`[demo] 演示(通用示例) ${dateStr} 戌时 男, 流年 ${startYear}-${endYear}`);
 }
 
 const a = astro.bySolar(dateStr, timeIdx, gender, true, 'zh-CN');

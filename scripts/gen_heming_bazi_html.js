@@ -3,10 +3,12 @@
  * 八字合盘 HTML —— 双方四柱合婚对照（婚姻 / 事业合作）
  *   双方四柱+纳音对照 + 日主十神关系 + 喜用对照 + 年柱纳音生克 + 命局神煞对比 + LLM 合婚注入
  * 用法: node gen_heming_bazi_html.js <A:Y M D H MIN 男|女> <B:Y M D H MIN 男|女> [输出.html] [合婚解读.json]
- *   无参数: demo A=1993-10-20 19:10 男 × B=1995-05-08 14:00 女
+ *   无参数: demo A=2000-08-16 14:30 男 × B=1995-05-08 14:00 女
  * 依赖: tyme4ts (vendor/tyme4ts) + bazi_core + vendor/bazi/shensha
  */
 const path = require('path'), fs = require('fs');
+const { ensureWorkspace } = require('./_workspace');
+const WS = ensureWorkspace();
 const { analyze, tenGodClass, GAN_WX } = require('./bazi_core');
 const { analyzeShensha } = require(path.join(__dirname, 'vendor/bazi/shensha.js'));
 const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
@@ -15,12 +17,12 @@ const argv = process.argv.slice(2);
 let pA, pB, outPath, jiePath;
 if (argv.length >= 12) {
   pA = argv.slice(0, 6); pB = argv.slice(6, 12);
-  outPath = argv[12] || `八字合盘-${pA[0]}×${pB[0]}.html`;
+  outPath = argv[12] || path.join(WS, `八字合盘-${pA[0]}×${pB[0]}.html`);
   jiePath = argv[13] || '';
 } else {
-  pA = ['1993','10','20','19','10','男']; pB = ['1995','5','8','14','0','女'];
-  outPath = '八字合盘-demo.html'; jiePath = '';
-  console.error('[demo] A=1993-10-20 19:10 男 × B=1995-05-08 14:00 女 → '+outPath);
+  pA = ['2000','8','16','14','30','男']; pB = ['1995','5','8','14','0','女'];
+  outPath = path.join(WS, '八字合盘-demo.html'); jiePath = '';
+  console.error('[demo] A=2000-08-16 14:30 男 × B=1995-05-08 14:00 女 → '+outPath);
 }
 
 const pan = p => {

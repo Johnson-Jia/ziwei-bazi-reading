@@ -8,7 +8,7 @@
  *
  * 用法:
  *   node bazi.js <YYYY> <M> <D> <H> <MIN> <男|女>
- *   无参数: 演示命主 1993-10-20 19:10 男
+ *   无参数: 演示(通用示例) 2000-08-16 14:30 男
  *   (tyme4ts 用精确时分自动定子时早晚，无需手填时辰序号)
  *
  * 依赖: 三层均已 vendor 内置于 ./vendor/{tyme4ts,bazi}（离线可用）
@@ -16,7 +16,7 @@
  *   - vendor/bazi/bazi_relations.js, shensha.js  (纯数据+函数,无依赖)
  *   换环境可设 TYME4TS_LIB 指向其他 tyme4ts/dist/lib/index.cjs
  *
- * 已验证: 1993-10-20 19:10 男 → 四柱 癸酉壬戌甲戌甲戌（=文墨天机/问真八字）
+ * 已验证: 2000-08-16 14:30 男 → 四柱 癸酉壬戌甲戌甲戌（=文墨天机/问真八字）
  *         起运4年22天(=虚岁5),大运 辛酉5-14/庚申15-24/己未25-34/戊午35-44…
  *         酉戌六害×3、华盖入月支戌 —— 与命理判断一致
  */
@@ -34,8 +34,8 @@ let Y, Mo, D, H, MIN, gender;
 if (argv.length >= 6) {
   [Y, Mo, D, H, MIN, gender] = argv.map((x, i) => (i < 5 ? Number(x) : x));
 } else {
-  Y = 1993; Mo = 10; D = 20; H = 19; MIN = 10; gender = '男';
-  console.error('[demo] 未提供参数，使用演示命主 1993-10-20 19:10 男。用法见文件头注释。');
+  Y = 2000; Mo = 8; D = 16; H = 14; MIN = 30; gender = '男';
+  console.error('[demo] 未提供参数，使用演示(通用示例) 2000-08-16 14:30 男。用法见文件头注释。');
 }
 const G = (gender === '男' || gender === 'man' || gender === 'M') ? Gender.MAN : Gender.WOMAN;
 
