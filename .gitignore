@@ -23,7 +23,9 @@ Thumbs.db
 解读-*.json
 scripts/_*.json
 scripts/_*.js
-!scripts/_workspace.js   # 例外: workspace解析模块(核心,需入库)
+# 例外: 核心共享模块入库(workspace解析 + 紫微共享逻辑,被 paipan/gen_*/ziwei_liunian 复用)
+!scripts/_workspace.js
+!scripts/_ziwei_common.js
 
 # 运行时工作区
 workspace/
