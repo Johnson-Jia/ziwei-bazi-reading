@@ -12,9 +12,13 @@ const { astro } = require(path.join(__dirname, 'vendor/iztro/lib/index.js'));
 const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 
 const DIMS = [['妻','夫妻'],['财','财帛'],['子','子女'],['禄','官禄'],['父','父母'],['身','命宫'],['友','仆役'],['考','福德'],['宅','田宅'],['灾','疾厄']];
-const JI = new Set(['左辅','右弼','天魁','天钺','文昌','文曲','禄存']);  // 流年虚吉星(流禄/流喜/流魁/流钺/年解)权重过低、易让盘偏吉，去除
-const SHA = new Set(['擎羊','陀罗','火星','铃星','地空','地劫','流羊','流陀','天刑','阴煞']);
-function judgeDim(a,y,pn){const pIdx=y.palaceNames.indexOf(pn);if(pIdx<0)return{verdict:'平',score:0};const o=a.palaces.find(function(p){return p.name===pn;})||a.palaces[pIdx],liu=y.stars[pIdx]||[];let ji=0,x=0;(o.majorStars||[]).forEach(s=>{const b=s.brightness;if(b==='庙'||b==='旺')ji+=0.5;else if(b==='陷')x+=0.5;if(s.mutagen==='禄'||s.mutagen==='科')ji+=0.5;else if(s.mutagen==='忌')x+=0.5;else if(s.mutagen==='权')ji+=0.3;});[...(o.minorStars||[]),...(o.adjectiveStars||[]),...liu].forEach(s=>{if(JI.has(s.name))ji+=0.5;if(SHA.has(s.name))x+=0.8;});[['禄',y.mutagen[0]],['权',y.mutagen[1]],['科',y.mutagen[2]],['忌',y.mutagen[3]]].forEach(([t,st])=>{if(st&&(o.majorStars||[]).some(s=>s.name===st)){if(t==='禄'||t==='科')ji+=2;else if(t==='忌')x+=2;else ji+=1;}});const sc=ji-x;return{verdict:sc>0?'吉':sc<0?'凶':'平',score:+sc.toFixed(1)};}
+// 星曜分类/四化表/三方四正/打分 统一至 _ziwei_common(完整命书:WEIGHT_FULL + 不计流年虚吉星)
+// 注:DIMS 本地保留——"考"→福德(非官禄),完整命书有意以福德看学业;与流年系列(考→官禄)的有意差异
+const _Z = require('./_ziwei_common');
+const { GAN_SIHUA, ZHI_LIST, sanheGroup, duigong, sanfangSizheng, SHA_HTML:SHA_SET, WEIGHT_FULL } = _Z;
+const JI = new Set(_Z.JI_STAR);
+const SHA = new Set(_Z.SHA_STAR);
+const judgeDim = (a, y, pn) => _Z.judgeDim(a, y, pn, { weight: WEIGHT_FULL });
 const INTERP = {'财凶':'破财/收入波动;父辈耗','灾凶':'健康/血光/意外','子凶':'子女事谨慎;胎停(若孕育)','禄凶':'事业压力/变动','考吉':'学业/资质/深造;贵人','身凶':'过劳/精力降','身吉':'精力充沛/安顿','禄吉':'晋升/掌权','财吉':'得财/理财机遇','考凶':'学业受阻','友吉':'合作得力/担财','友凶':'竞争/劫财/口舌','妻凶':'感情波折','宅凶':'房产波折','父凶':'父辈健康/家耗'};
 const interpret = d => DIMS.map(([k]) => INTERP[k+d[k].verdict]).filter(Boolean).join('；');
 // 流年LLM解读: 大限基调(十年环境) × 流年宫象(逐年) + 叠加提示(动态)
@@ -35,19 +39,6 @@ const interpretLN=l=>{
 };
 
 const ZHI_PIN = {子:'zi',丑:'chou',寅:'yin',卯:'mao',辰:'chen',巳:'si',午:'wu',未:'wei',申:'shen',酉:'you',戌:'xu',亥:'hai'};
-const SHA_SET = new Set(['擎羊','陀罗','火星','铃星','地空','地劫','天刑','阴煞','天空','截路','旬空','空亡','天虚','天哭','破碎','蜚廉','孤辰','寡宿','天使','天伤','咸池']);
-const ZHI_LIST = ['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'];
-// 天干四化表(禄/权/科/忌)
-const GAN_SIHUA = {
-  甲:[['廉贞','禄'],['破军','权'],['武曲','科'],['太阳','忌']], 乙:[['天机','禄'],['天梁','权'],['紫微','科'],['太阴','忌']],
-  丙:[['天同','禄'],['天机','权'],['文昌','科'],['廉贞','忌']], 丁:[['太阴','禄'],['天同','权'],['天机','科'],['巨门','忌']],
-  戊:[['贪狼','禄'],['太阴','权'],['右弼','科'],['天机','忌']], 己:[['武曲','禄'],['贪狼','权'],['天梁','科'],['文曲','忌']],
-  庚:[['太阳','禄'],['武曲','权'],['太阴','科'],['天同','忌']], 辛:[['巨门','禄'],['太阳','权'],['文曲','科'],['文昌','忌']],
-  壬:[['天梁','禄'],['紫微','权'],['左辅','科'],['武曲','忌']], 癸:[['破军','禄'],['巨门','权'],['太阴','科'],['贪狼','忌']],
-};
-const sanheGroup = z => { const i=ZHI_LIST.indexOf(z); return [ZHI_LIST[(i+4)%12], ZHI_LIST[(i+8)%12]]; };
-const duigong = z => ZHI_LIST[(ZHI_LIST.indexOf(z)+6)%12];
-const sanfangSizheng = z => [z, duigong(z), ...sanheGroup(z)];
 
 const argv = process.argv.slice(2);
 let dateStr,timeIdx,gender,startYear,endYear,outPath,interpPath,liunianJiePath;

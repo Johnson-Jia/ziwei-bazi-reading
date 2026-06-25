@@ -12,7 +12,7 @@ const T = require(path.join(__dirname, 'vendor/tyme4ts/dist/lib/index.cjs'));
 const { SolarTime, Gender } = T;
 const { analyzeZhiRelations, analyzeGanRelations } = require(path.join(__dirname, 'vendor/bazi/bazi_relations.js'));
 const { analyzeShensha } = require(path.join(__dirname, 'vendor/bazi/shensha.js'));
-const { analyze, kongWang, ZHI_MAIN } = require('./bazi_core');
+const { analyze, kongWang, ZHI_MAIN, GAN_WX } = require('./bazi_core');   // GAN_WX 复用 bazi_core(消除本地重复)
 
 const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 const DIMS = ['妻','财','子','禄','父','身','友','考','宅','灾','艺'];
@@ -36,8 +36,8 @@ const interpretLN = l => {
   if(dj.length&&lj.length) p.push('喜运+喜年·吉上添吉');
   return p.join('；')||'平稳';
 };
-const GAN_WX = {甲:'木',乙:'木',丙:'火',丁:'火',戊:'土',己:'土',庚:'金',辛:'金',壬:'水',癸:'水'};
 const isMan = g => g==='男'||g==='man'||g==='M';
+// GAN_WX 已从 bazi_core 复用(上方 require),原本地重复定义已清除
 
 function paipan(Y, Mo, D, H, MIN, gender) {
   const G = isMan(gender) ? Gender.MAN : Gender.WOMAN;
