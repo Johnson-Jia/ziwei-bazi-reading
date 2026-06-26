@@ -35,7 +35,7 @@ description: "Use when the user asks for 紫微斗数 / Zi Wei Dou Shu chart rea
 
 7. **定用神须四参合（八字）**：定真用神须「旺衰 + 格局 + 调候 + 流通」四参合（见 `methods/bazi-method.md` 第五节），**禁止单一旺衰机械判忌**——「缺五行不即忌」，缺/近缺的五行常是补缺、通关、泄秀所需之用（非忌）。引擎 `scripts/bazi_core.js` 的 `BAZI_SIHE` 开关（默认 on）即此四参合复核机制，可 `off` 对照旧旺衰。
 
-8. **趋吉避凶·正向引导（产出口径）**：命理旨在给人希望与出路，非堆砌凶象。吉凶按原理如实推演，但解析必须给"转化路径"——凶运指出该往哪发力、为喜用运蓄什么力（婚姻凶转攻事业、财运凶深耕技术韬光养晦、官杀凶以技术学识化杀），**每个凶配一条出路**；禁绝对化与凶吓表述（用"需注意/宜 X"替代"大凶/必破"）。详见 `methods/bazi-method.md` 第十五节 与 `methods/ziwei-method.md` 第十一节。
+8. **趋吉避凶·正向引导（产出口径·机制化）**：命理旨在给人希望与出路，非堆砌凶象。吉凶按原理如实推演，但解析必须给"转化路径"——凶运指出该往哪发力、为喜用运蓄什么力（婚姻凶转攻事业、财运凶深耕技术韬光养晦、官杀凶以技术学识化杀），**每个凶配一条出路**；禁绝对化与凶吓表述（用"需注意/宜 X"替代"大凶/必破"）。详见 `methods/bazi-method.md` 第十五节 与 `methods/ziwei-method.md` 第十一节。**机制化落实**：`data/empower.json` 积极赋能语料层（7 类：`interpret`/`geju`/`palace_sihua`/`bazi_trait`/`dayun`/`liunian`/`heming`）提供每条象的 `{judgment(如实断)+transform(转化)+action[](行动)+mindset(心态)}`，`scripts/_empower.js` 的 `lookup(category,key)` 供 `gen_*.js` 与 LLM prompt 查询；**所有 gen 产出对每个凶/特质/运势节点必须查 empower 配出路**，查不到走通用转化模板兜底。详见 `docs/specs/2026-06-26-积极赋能改造-design.md`。
 
 ## 标准推演流程
 
