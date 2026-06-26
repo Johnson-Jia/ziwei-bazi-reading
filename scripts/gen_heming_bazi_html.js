@@ -8,6 +8,7 @@
  */
 const path = require('path'), fs = require('fs');
 const { ensureWorkspace } = require('./_workspace');
+const { lookup: empower } = require('./_empower');
 const WS = ensureWorkspace();
 const { analyze, tenGodClass, GAN_WX } = require('./bazi_core');
 const { analyzeShensha } = require(path.join(__dirname, 'vendor/bazi/shensha.js'));
@@ -67,6 +68,42 @@ const GUXIN = ['孤辰','寡宿'];
 const markTaohua = txt => TAOHUA.some(t => txt.includes(t));
 const markGuxin = txt => GUXIN.some(t => txt.includes(t));
 
+// —— 积极赋能片段(只改呈现,不动推演) ——
+// 判定:日主相克 / 纳音相克 / 喜用互补
+const wxRelText = wxRel(wxA, wxB);
+const dayKe = /相克/.test(wxRelText);                       // 日主五行相克
+const nyRelText = nyA && nyB ? wxRel(nyA, nyB) : '';
+const nyKe = /相克/.test(nyRelText);                        // 年柱纳音相克
+const yongA = (A.yongShen||[]), yongB = (B.yongShen||[]);
+// 喜用互补判定:一方喜用 = 另一方日主五行,或双方喜用互含
+const WX_SHENG_L = {木:'火',火:'土',土:'金',金:'水',水:'木'};
+const xiBu = yongA.length && yongB.length && (
+  yongA.some(x => x === wxB) || yongB.some(x => x === wxA) ||
+  yongA.some(x => WX_SHENG_L[x] === wxB) || yongB.some(x => WX_SHENG_L[x] === wxA)
+);
+
+const emp_richong = empower('heming', '日柱冲克');    // 日主/纳音相克
+const emp_xiyong = empower('heming', '喜用互补');     // 喜用互补
+
+// 赋能卡 HTML 渲染
+const empCard = (e, tone) => `<div class="jie-card${tone?' tone-'+tone:''}"><p><b>→ ${esc(e.transform)}</b></p>` +
+  (e.action && e.action.length ? `<p><span class="lbl">宜:</span>${e.action.map(esc).join(' / ')}</p>` : '') +
+  `<p class="ms">${esc(e.mindset)}</p></div>`;
+
+// 关键象转化卡:日主或纳音相克
+const hemingTransformCards = (dayKe || nyKe) ? empCard(emp_richong, 'work') : '';
+// 正向强化卡:喜用互补
+const hemingPositiveCard = xiBu ? empCard(emp_xiyong, 'good') : '';
+
+// 积极引导小节(相处功课/协同发力)
+const guideItems = [];
+if (dayKe || nyKe) guideItems.push(`<b>${esc(emp_richong.transform)}</b>:${emp_richong.action.map(esc).join('、')}`);
+if (xiBu) guideItems.push(`<b>${esc(emp_xiyong.transform)}</b>:${emp_xiyong.action.map(esc).join('、')}`);
+const guideSection = `<section><div class="sec-title">★ 相处功课 · 协同发力</div>` +
+  `<div class="rel">感情是双方共同修行的功课,八字呈现的"差异"是镜子、是张力,善用即互补。` +
+  (guideItems.length ? guideItems.map(x=>`<br>· ${x}`).join('') : '<br>· 尊重差异、白纸黑字沟通、明确分工,磨合即成长。') +
+  `<br><span class="ms">${esc((dayKe||nyKe) ? emp_richong.mindset : emp_xiyong.mindset)}</span></div></section>`;
+
 const html = `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>八字合盘·${esc(pA[0])} × ${esc(pB[0])}</title>
 <style>
@@ -91,6 +128,9 @@ td.pa,td.pb{width:42%}.ny{display:block;font-size:11.5px;color:#789;margin-top:2
 .rel{font-size:15px;background:rgba(42,111,142,.08);border:1px solid var(--line);border-radius:6px;padding:9px 13px;margin:8px 0}.rel b{color:var(--v)}
 .jie-card{background:rgba(255,255,255,.7);border-left:3px solid var(--jade);border-radius:6px;padding:11px 15px;margin:8px 0}
 .jie-card h4{color:var(--jade);font-size:16px;margin-bottom:6px}.jie-card p{font-size:14.5px;margin:5px 0;color:#334;line-height:1.8}
+.jie-card.tone-work{border-left-color:var(--ji);background:rgba(192,57,43,.05)}
+.jie-card.tone-good{border-left-color:var(--jade);background:rgba(63,107,78,.07)}
+.jie-card .lbl{color:var(--gold);font-weight:700;margin-right:3px}.jie-card .ms,.rel .ms{color:var(--ink2);font-style:italic;font-size:13px}
 .score{font-size:15px;color:var(--gold);background:rgba(122,138,46,.1);border:1px solid var(--line);border-radius:6px;padding:9px 13px;margin:8px 0}
 .tag-ss{display:inline-block;font-size:10px;padding:0 5px;border-radius:6px;margin-left:3px;color:#fff;vertical-align:middle}
 .tag-th{background:var(--ji)}.tag-gx{background:#8a6d3b}
@@ -112,18 +152,21 @@ td.pa,td.pb{width:42%}.ny{display:block;font-size:11.5px;color:#789;margin-top:2
 </section>
 
 <section><div class="sec-title">三、日主十神关系（双方日主生克）</div>
-<div class="rel">甲方日主 <b>${esc(A.dayMaster)}</b>(${esc(wxA)}) 视乙方日主 <b>${esc(B.dayMaster)}</b>(${esc(wxB)}) 为 → <b>${esc(A_see_B)}</b>；乙方视甲方为 → <b>${esc(B_see_A)}</b>。<br>日主五行：<b>${esc(wxRel(wxA, wxB))}</b>。相生相助为顺，相克为逆（需看命局能否化解）。</div>
+<div class="rel">甲方日主 <b>${esc(A.dayMaster)}</b>(${esc(wxA)}) 视乙方日主 <b>${esc(B.dayMaster)}</b>(${esc(wxB)}) 为 → <b>${esc(A_see_B)}</b>；乙方视甲方为 → <b>${esc(B_see_A)}</b>。<br>日主五行：<b>${esc(wxRelText)}</b>。相生相助为顺，相克为功课点（差异是张力，磨合可成互补，非克害）。</div>
+${dayKe ? empCard(emp_richong, 'work') : ''}
 </section>
 
 <section><div class="sec-title">四、年柱纳音生克</div>
-<div class="rel">甲方年柱纳音 <b>${esc(A.nayin[0])}</b>（${esc(nyA)}）｜ 乙方 <b>${esc(B.nayin[0])}</b>（${esc(nyB)}）→ <b>${esc(nyA && nyB ? wxRel(nyA, nyB) : '纳音五行待定')}</b>。纳音相生为顺，仅作参考不为主。</div>
+<div class="rel">甲方年柱纳音 <b>${esc(A.nayin[0])}</b>（${esc(nyA)}）｜ 乙方 <b>${esc(B.nayin[0])}</b>（${esc(nyB)}）→ <b>${esc(nyRelText || '纳音五行待定')}</b>。纳音相生为顺,相克为辅参考(非主,主看日主与喜用),差异可借沟通化解。</div>
+${nyKe ? empCard(emp_richong, 'work') : ''}
+${xiBu ? empCard(emp_xiyong, 'good') : ''}
 </section>
 
 <section><div class="sec-title">五、命局神煞对比（桃花 / 孤辰寡宿相配）</div>
 <table><thead><tr><th></th><th>甲方</th><th>乙方</th></tr></thead><tbody>
 <tr><td class="pn">神煞</td><td>${esc(shenshaText(A.shensha))}${markTaohua(shenshaText(A.shensha))?'<span class="tag-ss tag-th">桃花</span>':''}${markGuxin(shenshaText(A.shensha))?'<span class="tag-ss tag-gx">孤克</span>':''}</td><td>${esc(shenshaText(B.shensha))}${markTaohua(shenshaText(B.shensha))?'<span class="tag-ss tag-th">桃花</span>':''}${markGuxin(shenshaText(B.shensha))?'<span class="tag-ss tag-gx">孤克</span>':''}</td></tr>
 </tbody></table>
-<div class="note">一方桃花旺而另一方孤辰寡宿，需注意感情节奏差异；双方皆带华盖则性情相投但偏孤。神煞相配为辅，主看日主与喜用。</div>
+<div class="note">一方桃花旺而另一方孤辰寡宿,需多体谅感情节奏差异;双方皆带华盖则性情相投而偏内敛。神煞相配为辅,主看日主与喜用,差异以耐心沟通磨合。</div>
 </section>
 
 <section><div class="sec-title">六、合婚深度分析（LLM 按 heming-method 八字合婚推演）</div>
@@ -134,6 +177,8 @@ ${jieSec('五行互补', jie['五行互补'])}
 ${jieSec('日主十神关系', jie['十神关系'])}
 ${jieSec('综合建议', jie['建议'])}
 </section>
+
+${guideSection}
 
 <div class="disclaim"><b>免责声明</b>：本分析基于所提供的双方四柱数据，运用中国传统命理技法推演合婚。命理学属于传统文化，<b>并非实证科学，不具备经过科学验证的预测能力</b>。所有缘分判断、契合度与建议，<b>仅适用于文化研究、自我觉察与娱乐参考，不能替代专业心理咨询、法律意见或婚姻决策</b>。感情与婚姻由双方共同经营，理性看待、积极沟通。如有实际困扰，请咨询专业持证人士。</div>
 </div></body></html>`;
