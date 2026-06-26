@@ -8,12 +8,13 @@ const WS = ensureWorkspace();
 const {astro}=require(path.join(__dirname,'vendor/iztro/lib/index.js'));
 // 星曜分类/打分逻辑统一至 _ziwei_common(流年运势:WEIGHT_LIU + 计入流年虚吉星)
 const _Z=require('./_ziwei_common');
+const { lookup: empower } = require('./_empower');
 const {DIMS,WEIGHT_LIU}=_Z;
 const judgeDim=(a,y,pn)=>_Z.judgeDim(a,y,pn,{weight:WEIGHT_LIU,withLiu:true});
 const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 // 🔮 解读表(同八字,基于预测指引)
 const INTERP={'财凶':'破财/收入波动;父辈耗','灾凶':'健康/血光/意外','子凶':'子女事谨慎;胎停(若孕育)','禄凶':'事业压力/变动','考吉':'学业/资质/深造;贵人','身凶':'过劳/精力降','身吉':'精力充沛/安顿','禄吉':'晋升/掌权','财吉':'得财/理财机遇','考凶':'学业受阻','友吉':'合作得力/担财','友凶':'竞争/劫财/口舌','妻凶':'感情波折','宅凶':'房产波折','父凶':'父辈健康/家耗'};
-const interpret=d=>DIMS.map(([k])=>INTERP[k+d[k].verdict]).filter(Boolean).join('；');
+const interpret=d=>DIMS.map(([k])=>{const v=d[k].verdict,key=k+v;const base=INTERP[key]||'';if(v==='凶'){const e=empower('interpret',key);return base?(base+'→'+e.transform):e.transform;}return base;}).filter(Boolean).join('；');
 const argv=process.argv.slice(2);
 let dateStr,timeIdx,gender,startYear,endYear,outPath;
 if(argv.length>=3){[dateStr,timeIdx,gender]=argv;timeIdx=Number(timeIdx);startYear=argv[3]?Number(argv[3]):1994;endYear=argv[4]?Number(argv[4]):(Number(dateStr.split('-')[0])+99);outPath=argv[5]||path.join(WS,`紫微运势-${dateStr.split('-')[0]}.html`);}

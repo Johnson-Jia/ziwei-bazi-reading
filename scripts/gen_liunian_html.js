@@ -6,6 +6,7 @@ const { analyze } = require('./bazi_core');
 const fs = require('fs');
 const path = require('path');
 const { ensureWorkspace } = require('./_workspace');
+const { lookup: empower } = require('./_empower');
 const WS = ensureWorkspace();
 function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 const DIMS = ['妻','财','子','禄','父','身','友','考','宅','灾'];
@@ -14,7 +15,7 @@ const J = {财:'理财机遇',父:'父辈康',禄:'晋升',考:'深造',子:'子
 function advice(d){const x=DIMS.filter(k=>d[k].verdict==='凶'),j=DIMS.filter(k=>d[k].verdict==='吉'),p=[];if(x.length)p.push('⚠'+x.map(k=>k).join('/'));if(j.length)p.push('✓'+j.map(k=>k).join('/'));return p.join(' ')||'平稳';}
 // 🔮 预测解读(基于bazi-method第十三节预测指引表,规则化自动解读)
 const INTERP={'财凶':'破财/收入波动/投资损;父辈耗;感情波折','灾凶':'健康/血光/意外;官非压力','子凶':'子女事谨慎/胎停(若孕育);健康克身','禄凶':'事业压力/受克/变动','考吉':'学业/资质/深造/文凭;长辈贵人','身凶':'健康透支/过劳/精力降','身吉':'精力充沛/安顿','禄吉':'晋升/掌权/地位','财吉':'得财/理财机遇/置业','考凶':'学业受阻/文书不利','友吉':'合作得力/人际助/担财','友凶':'竞争/劫财/口舌','妻凶':'感情波折/妻事不顺','宅凶':'房产波折/家宅耗','父凶':'父辈健康/家耗'};
-function interpret(d){return DIMS.map(k=>INTERP[k+d[k].verdict]).filter(Boolean).join('；');}
+function interpret(d){return DIMS.map(k=>{const v=d[k].verdict,key=k+v;const base=INTERP[key]||'';if(v==='凶'){const e=empower('interpret',key);return base?(base+'→'+e.transform):e.transform;}return base;}).filter(Boolean).join('；');}
 const argv = process.argv.slice(2);
 let Y,Mo,D,H,MIN,gender,startYear,endYear,outPath;
 if(argv.length>=6){[Y,Mo,D,H,MIN]=argv.slice(0,5).map(Number);gender=argv[5];startYear=argv[6]?Number(argv[6]):1994;endYear=argv[7]?Number(argv[7]):(Y+99);outPath=argv[8]||path.join(WS,`八字运势-${Y}.html`);}
