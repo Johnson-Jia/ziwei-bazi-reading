@@ -187,11 +187,11 @@ function renderEmpowerBazi(chart) {
   const shunShi = isWeak
     ? `身弱喜印比,逢印比大运流年发力(深耕/合作),逢财官食伤运守成蓄力(忌冒进/透支)。`
     : `身旺喜财官食伤,逢财官食伤大运流年顺势拓展,逢印比运守成分流。`;
-  return `<section class="empower"><div class="sec-title">🌞 积极引导 · 顺势而为</div>
+  return `<div class="empower"><div class="sec-title">🌞 积极引导 · 顺势而为</div>
     <div class="empower-card"><h4>知己 · 禀赋扬长</h4><p>${esc(zhiJi)}</p></div>
     <div class="empower-card"><h4>顺势 · 节奏功课</h4><p>${esc(shunShi)}</p></div>
     <div class="empower-card"><h4>行动 · 避坑指南</h4>${trait?`<p>${esc(trait.transform)}</p><p>宜:${esc(trait.action.join('、'))}</p><p class="mindset">${esc(trait.mindset)}</p>`:'<p>扬长避短,稳健前行。</p>'}</div>
-  </section>`;
+  </div>`;
 }
 const empowerSection = renderEmpowerBazi(c);
 
