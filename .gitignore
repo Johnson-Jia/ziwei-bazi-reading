@@ -26,6 +26,7 @@ scripts/_*.js
 # 例外: 核心共享模块入库(workspace解析 + 紫微共享逻辑,被 paipan/gen_*/ziwei_liunian 复用)
 !scripts/_workspace.js
 !scripts/_ziwei_common.js
+!scripts/_empower.js
 
 # 运行时工作区
 workspace/
