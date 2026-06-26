@@ -8,6 +8,7 @@
  */
 const path = require('path'), fs = require('fs');
 const { ensureWorkspace } = require('./_workspace');
+const { lookup: empower } = require('./_empower');
 const WS = ensureWorkspace();
 const { astro } = require(path.join(__dirname, 'vendor/iztro/lib/index.js'));
 const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
@@ -81,6 +82,41 @@ const starInfo = s => s ? `<b>${esc(s.palace)}</b>${s.brightness?' · '+esc(s.br
 // —— 四化互参表 ——
 const crossRow = (list, dir) => list.map(x => `<tr><td class="hua">${esc(x.hua)}</td><td>${esc(dir)}</td><td>${esc(x.inTo)}</td></tr>`).join('');
 
+// —— 积极赋能片段(只改呈现,不动推演) ——
+// 判定:双方是否互化忌(A 化忌入 B 关键宫 且 B 化忌入 A 关键宫)
+const KEYPAL = ['命宫','夫妻','财帛','官禄','福德'];
+const A_jiInB = A2B.filter(x => /化忌$/.test(x.hua) && KEYPAL.includes(x.inTo));
+const B_jiInA = B2A.filter(x => /化忌$/.test(x.hua) && KEYPAL.includes(x.inTo));
+const mutualJi = A_jiInB.length && B_jiInA.length;
+// 太阳/太阴化忌(克象)
+const sunMoonKe = (sunA && sunA.mutagen === '忌') || (sunB && sunB.mutagen === '忌') ||
+                  (moonA && moonA.mutagen === '忌') || (moonB && moonB.mutagen === '忌');
+// 化禄入对方关键宫(合象)
+const luInKey = [...A2B, ...B2A].filter(x => /化禄$/.test(x.hua) && KEYPAL.includes(x.inTo)).length;
+
+// 取赋能语
+const emp_hua_ji = empower('heming', '化忌互冲');      // 化忌互冲/化忌克象
+const emp_xiyong = empower('heming', '喜用互补');      // 正向合象强化
+
+// 赋能卡 HTML 渲染
+const empCard = (e, tone) => `<div class="jie-card${tone?' tone-'+tone:''}"><p><b>→ ${esc(e.transform)}</b></p>` +
+  (e.action && e.action.length ? `<p><span class="lbl">宜:</span>${e.action.map(esc).join(' / ')}</p>` : '') +
+  `<p class="ms">${esc(e.mindset)}</p></div>`;
+
+// 关键象转化卡:化忌互冲或日月化忌克象
+const hemingTransformCards = (mutualJi || sunMoonKe) ? empCard(emp_hua_ji, 'work') : '';
+// 正向强化卡:有化禄入对方关键宫
+const hemingPositiveCard = luInKey ? empCard(emp_xiyong, 'good') : '';
+
+// 积极引导小节(相处功课/协同发力,基于 heming 赋能)
+const guideItems = [];
+if (mutualJi || sunMoonKe) guideItems.push(`<b>${esc(emp_hua_ji.transform)}</b>:${emp_hua_ji.action.map(esc).join('、')}`);
+if (luInKey) guideItems.push(`<b>${esc(emp_xiyong.transform)}</b>:${emp_xiyong.action.map(esc).join('、')}`);
+const guideSection = `<section><div class="sec-title">★ 相处功课 · 协同发力</div>` +
+  `<div class="rel">感情是双方共同修行的功课,命盘呈现的"差异"是镜子、是张力,善用即互补。` +
+  (guideItems.length ? guideItems.map(x=>`<br>· ${x}`).join('') : '<br>· 尊重差异、白纸黑字沟通、明确分工,磨合即成长。') +
+  `<br><span class="ms">${esc(mutualJi||sunMoonKe ? emp_hua_ji.mindset : emp_xiyong.mindset)}</span></div></section>`;
+
 const html = `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>紫微合盘·${esc(dA)} × ${esc(dB)}</title>
 <style>
@@ -105,6 +141,10 @@ td.pa,td.pb{width:42%}.loan{color:#a96;font-size:12px}
 .cross td.hua{font-weight:700;color:var(--v);white-space:nowrap}
 .jie-card{background:rgba(255,253,247,.7);border-left:3px solid var(--jade);border-radius:6px;padding:11px 15px;margin:8px 0}
 .jie-card h4{color:var(--jade);font-size:16px;margin-bottom:6px}.jie-card p{font-size:14.5px;margin:5px 0;color:#334;line-height:1.8}
+.jie-card.tone-work{border-left-color:var(--v);background:rgba(156,43,34,.05)}
+.jie-card.tone-good{border-left-color:var(--lu);background:rgba(79,138,99,.07)}
+.jie-card .lbl{color:var(--gold);font-weight:700;margin-right:3px}.jie-card .ms{color:var(--ink2);font-style:italic;font-size:13px}
+.rel{font-size:15px;color:var(--gold);background:rgba(154,122,46,.1);border:1px solid var(--line);border-radius:6px;padding:9px 13px;margin:8px 0;line-height:1.85}.rel .ms{color:var(--ink2);font-style:italic;font-size:13px}
 .score{font-size:15px;color:var(--gold);background:rgba(154,122,46,.1);border:1px solid var(--line);border-radius:6px;padding:9px 13px;margin:8px 0}
 .disclaim{background:#3a2f22;color:#e8dcc2;padding:13px;border-radius:8px;font-size:13px;line-height:1.75;border-left:4px solid var(--v);margin-top:12px}
 .disclaim b{color:#f0c674}
@@ -129,12 +169,13 @@ td.pa,td.pb{width:42%}.loan{color:#a96;font-size:12px}
 <tr><td class="pn">太阳</td><td>${starInfo(sunA)}</td><td>${starInfo(sunB)}</td></tr>
 <tr><td class="pn">太阴</td><td>${starInfo(moonA)}</td><td>${starInfo(moonB)}</td></tr>
 </tbody></table>
-<div class="note">太阳庙旺=旺夫/自身贵，落陷化忌=克象；太阴庙旺=妻美贤/自身秀，化忌=婆媳不和之象。</div>
+<div class="note">太阳庙旺=旺夫/自身贵，落陷化忌=需注意互动磨合之象；太阴庙旺=妻美贤/自身秀，化忌=婆媳沟通需多体谅之象。差异非灾,以耐心沟通化解即功课。</div>
 </section>
 
 <section><div class="sec-title">四、本命四化互参（A 四化落 B 盘 / B 四化落 A 盘）</div>
 <table class="cross"><thead><tr><th>四化</th><th>方向</th><th>落入对方宫位</th></tr></thead><tbody>${crossRow(A2B,'A→B')}${crossRow(B2A,'B→A')}</tbody></table>
-<div class="note">化禄入对方命/财=正向帮助；化忌入对方夫妻=带给对方婚姻伤害；双方互化忌=冤家型。</div>
+<div class="note">化禄入对方命/财=正向滋养；化忌入对方夫妻=互动功课点；双方互化忌=缘分深厚、磨合功课型(非克害,差异是镜子,修行可化解)。</div>
+${hemingTransformCards}${hemingPositiveCard}
 </section>
 
 <section><div class="sec-title">五、合盘深度分析（LLM 按 heming-method 五步法推演）</div>
@@ -148,6 +189,8 @@ ${jieSec('缘分类型', jie['缘分类型'])}
 ${jieSec('婚期建议', jie['婚期'])}
 ${jieSec('综合建议', jie['建议'])}
 </section>
+
+${guideSection}
 
 <div class="disclaim"><b>免责声明</b>：本分析基于所提供的双方命盘数据，运用中国传统命理技法推演合盘。命理学属于传统文化，<b>并非实证科学，不具备经过科学验证的预测能力</b>。所有缘分判断、契合度与建议，<b>仅适用于文化研究、自我觉察与娱乐参考，不能替代专业心理咨询、法律意见或婚姻决策</b>。感情与婚姻由双方共同经营，理性看待、积极沟通。如有实际困扰，请咨询专业持证人士。</div>
 </div></body></html>`;
