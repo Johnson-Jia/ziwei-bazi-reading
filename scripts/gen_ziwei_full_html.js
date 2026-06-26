@@ -172,7 +172,11 @@ for (let y=startYear; y<=endYear; y++) {
   if (!byDy[dk]) byDy[dk] = []; byDy[dk].push(data[data.length-1]);
 }
 const currentDk = (data.find(l => l.year===2026) || {dk: daXians[0]?daXians[0].dk:''}).dk;
-const allData = JSON.stringify(data.map(l => ({y:l.year, ck:l.dk, d:Object.fromEntries(DIMS.map(([k])=>[k,l.dims[k].score]))})));
+const allData = JSON.stringify(data.map(l => {
+  const badDims = DIMS.filter(([k]) => l.dims[k] && l.dims[k].verdict === '凶').map(([k]) => k);
+  const em = badDims.length ? badDims.map(k => k + '→' + empower('interpret', k + '凶').transform).join('；') : '';
+  return {y:l.year, ck:l.dk, d:Object.fromEntries(DIMS.map(([k])=>[k,l.dims[k].score])), em};
+}));
 const dyCards = daXians.map(d => { const isNow = d.dk===currentDk; const ms = (d.palace.majorStars||[]).map(s=>s.name).slice(0,2).join(' '); const pn = d.palace.name.endsWith('宫') ? d.palace.name : d.palace.name+'宫'; const jie = dxJie(d.dk); return `<div class="dy-card${isNow?' now':''}${jie?' has-jie':''}" data-dy="${esc(d.dk)}" onclick="showDy('${esc(d.dk)}')" title="${esc(jie)}"><div class="dy-gz">${esc(d.dk)}${isNow?'<span class="now-tag">当前</span>':''}${jie?'<span class="jie-tag">📖</span>':''}</div><div class="dy-ya">${esc(d.years)}年 · ${esc(d.ages)}岁</div><div class="dy-palace">${esc(pn)}@${esc(d.palace.earthlyBranch)} ${esc(ms)||'空'}</div></div>`; }).join('');
 const dyPanels = daXians.map(d => { const lys = byDy[d.dk]||[]; const rows = lys.map(l => { const lText = lyJie(l.year) ? `🔮 ${esc(lyJie(l.year))}` : `🔮 ${esc(interpretLN(l))}`; return `<div class="ly-row"><span class="ly-year">${l.year}</span><span class="ly-gz">${esc(l.taiSui)}</span><span class="ly-branch">流命@${esc(l.liuMing)}</span><span class="mutagen">${esc(l.mutagen)}</span><span class="dim-row">${DIMS.map(([k])=>`<span class="dim-badge d-${l.dims[k].verdict}">${k}</span>`).join('')}</span></div><div class="ly-interp">${lText}</div>`; }).join(''); return `<div class="dy-panel" id="panel-${esc(d.dk)}">${rows||'<p class="empty">该大限范围外(无流年数据)</p>'}</div>`; }).join('');
 
@@ -391,14 +395,14 @@ function drawTrend(items){
   var area=document.getElementById('chart-area');
   if(!items.length){area.innerHTML='<p style="color:#888;padding:16px;text-align:center">该大限无流年数据</p>';return;}
   var dims=DN.map(function(d){return Array.isArray(d)?d[0]:d;});
-  var pts=items.map(function(l){var sum=dims.reduce(function(s,d){return s+(l.d[d]||0);},0);return {y:l.y,sum:sum};});  // 总分(起伏明显, Y轴各自自适应, 看各自趋势不跨体系比绝对值)
+  var pts=items.map(function(l){var sum=dims.reduce(function(s,d){return s+(l.d[d]||0);},0);return {y:l.y,sum:sum,em:l.em||''};});  // 总分(起伏明显, Y轴各自自适应, 看各自趋势不跨体系比绝对值)
   var W=860,H=210,pl=38,pr=14,pt=14,pb=26,N=pts.length;
   var maxAbs=Math.max.apply(null,pts.map(function(p){return Math.abs(p.sum);}).concat([2]));
   var xs=N>1?(W-pl-pr)/(N-1):0;
   var ym=H-pb-(H-pt-pb)/2;
   var ys=(H-pt-pb)/2/(maxAbs*1.15);
   var line=pts.map(function(p,i){return (pl+i*xs).toFixed(1)+','+(ym-p.sum*ys).toFixed(1);}).join(' ');
-  var dots=pts.map(function(p,i){var x=pl+i*xs,y=ym-p.sum*ys;return '<circle cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="3.5" fill="'+(p.sum>0?'#2e7d32':p.sum<0?'#c62828':'#999')+'"><title>📅 '+p.y+'年 总运势:'+(p.sum>0?'+':'')+p.sum+'</title></circle>';}).join('');
+  var dots=pts.map(function(p,i){var x=pl+i*xs,y=ym-p.sum*ys;return '<circle cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="3.5" fill="'+(p.sum>0?'#2e7d32':p.sum<0?'#c62828':'#999')+'"><title>📅 '+p.y+'年 总运势:'+(p.sum>0?'+':'')+p.sum+(p.em?'\\n💡 '+p.em:'')+'</title></circle>';}).join('');
   var xLab=pts.map(function(p,i){if(N>12&&i%2!==0)return '';return '<text x="'+(pl+i*xs).toFixed(0)+'" y="'+(H-pb+13)+'" font-size="9" text-anchor="middle" fill="#888">'+p.y+'</text>';}).join('');
   var ticks=[-1,-0.5,0,0.5,1].map(function(m){return Math.round(maxAbs*m*10)/10;});
   var grid=ticks.map(function(s){return '<line x1="'+pl+'" x2="'+(W-pr)+'" y1="'+(ym-s*ys).toFixed(1)+'" y2="'+(ym-s*ys).toFixed(1)+'" stroke="#eee"/><text x="'+(pl-4)+'" y="'+(ym-s*ys+3).toFixed(1)+'" font-size="8" text-anchor="end" fill="#aaa">'+s+'</text>';}).join('');
