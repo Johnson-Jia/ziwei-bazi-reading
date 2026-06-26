@@ -134,6 +134,20 @@ const relList = [...p.relations.zhi, ...p.relations.gan].map(rr => `<span class=
 const shenshaList = p.shensha.map(s => `<div class="ss-item"><b>${s.name}</b><span class="ss-pos">@${s.position}（${s.source}）</span><span class="ss-info">${s.info}</span></div>`).join('') || '<span class="rel-none">本命无明显神煞</span>';
 
 const interpSec = (title, arr) => (arr && arr.length) ? `<div class="ip-card"><h4>${title}</h4>${arr.map(x=>`<p>${esc(x)}</p>`).join('')}</div>` : '';
+// 格局卡(支持 {name,type:'good'/'caution',desc} 对象,解构渲染;凶格配 empower 出路)
+const interpGeju = (arr) => {
+  if (!arr || !arr.length) return '';
+  const objs = arr.map(x => typeof x === 'string' ? {name:x, type:'good', desc:''} : x);
+  const good = objs.filter(o => o.type !== 'caution' && o.type !== 'bad');
+  const bad = objs.filter(o => o.type === 'caution' || o.type === 'bad');
+  const grp = (list, cls, icon, title) => list.length ? `<div class="geju-group ${cls}"><div class="geju-head">${icon} ${title}</div>${list.map(o => {
+    const e = (cls === 'gg-bad') ? (empower('bazi_trait', o.name.replace(/格$/,'')) || empower('geju', o.name)) : null;
+    const ee = e && e.transform ? e : null;
+    const tail = ee ? `<span class="geju-trans">→ ${ee.transform}；宜:${ee.action.join('/')}</span>` : '';
+    return `<div class="geju-item"><b>${esc(o.name)}</b>${o.desc?`：<span>${esc(o.desc)}</span>`:''}${tail}</div>`;
+  }).join('')}</div>` : '';
+  return `<div class="ip-card geju"><h4>核心格局</h4>${grp(good,'gg-good','⭐','成格')}${grp(bad,'gg-bad','⚠','需注意(配出路)')}</div>`;
+};
 const zhuSec = interp['柱解'] ? Object.entries(interp['柱解']).map(([k,arr]) => interpSec(k, arr)).join('') : '';
 const legendCard = `<div class="ip-card legend"><h4>解读置信度图例</h4><p><span class="conf high">🟢高</span> 依据充分、较确定 ｜ <span class="conf mid">🟡中</span> 有依据、中等把握 ｜ <span class="conf low">🔴低</span> 弱关联/单一依据、仅供参考</p></div>`;
 const interpBlock = [
@@ -141,7 +155,7 @@ const interpBlock = [
   interpSec('日主旺衰', interp['日主旺衰']),
   interpSec('喜用神', interp['喜用神']),
   `<div class="ip-card"><h4>五行分布（含藏干）</h4>${wxBar}${(interp['五行分布']||[]).map(x=>`<p>${esc(x)}</p>`).join('')}</div>`,
-  interpSec('格局', interp['格局']),
+  interpGeju(interp['格局']),
   zhuSec ? `<div class="ip-card"><h4>四柱解析</h4>${zhuSec}</div>` : '',
   interpSec('六亲对应', interp['六亲']),
   interpSec('刑冲克害', interp['刑冲克害']),
