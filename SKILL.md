@@ -94,8 +94,8 @@ ziwei-bazi-reading/
 │   ├── bazi_core.js        # 八字核心引擎(排盘+旺衰+流年,共用模块)
 │   ├── bazi_liunian.js     # 八字流年逐年断 → JSON
 │   ├── ziwei_liunian.js       # 紫微流年十维度 → JSON
-│   ├── gen_liunian_html.js    # 八字运势交互式HTML(大运列表+流年十维度)
-│   ├── gen_ziwei_liunian_html.js # 紫微运势交互式HTML(大限+流年宫象)
+│   ├── gen_liunian_html.js    # [已废弃]八字运势HTML—命书gen_bazi_full已一站式含运势,不再单独输出
+│   ├── gen_ziwei_liunian_html.js # [已废弃]紫微运势HTML—命书gen_ziwei_full已一站式含运势,不再单独输出
 │   ├── gen_bazi_full_html.js      # 八字【完整命书】HTML(命盘+藏干+纳音+五行+喜用+刑冲克害+神煞+LLM解读注入+大运+流年+折线图)
 │   ├── gen_ziwei_full_html.js     # 紫微【完整命书】HTML(环形盘面+格局成格/凶格卡+疾厄脏腑卡+LLM解读注入+大限+流年)
 │   ├── gen_heming_ziwei_html.js  # 紫微合盘HTML(双方关键宫联参+太阳太阴+四化互参+LLM五步法)
