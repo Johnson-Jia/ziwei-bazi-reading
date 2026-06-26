@@ -194,12 +194,12 @@ function renderEmpower() {
   const dyKey = dyBadCnt > 3 ? '财官忌运' : '食伤喜运';
   const shunShi = empower('dayun', dyKey);
   const xingDong = empower('bazi_trait', '身弱财多');
-  return `<section class="empower">
+  return `<div class="empower">
     <div class="sec-title">🌞 积极引导 · 顺势而为</div>
     <div class="empower-card"><h4>知己 · 禀赋扬长</h4><p>${esc(zhiJi)}</p></div>
     <div class="empower-card"><h4>顺势 · 节奏功课</h4><p><b>${esc(currentDk)}大限</b>:${esc(shunShi.judgment)}</p><p>转化:${esc(shunShi.transform)}</p><p>宜:${esc(shunShi.action.join('、'))}</p></div>
     <div class="empower-card"><h4>行动 · 避坑指南</h4><p>${esc(xingDong.transform)}</p><p>宜:${esc(xingDong.action.join('、'))}</p><p class="mindset">${esc(xingDong.mindset)}</p></div>
-  </section>`;
+  </div>`;
 }
 
 const interpBlock = [
