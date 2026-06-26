@@ -40,7 +40,7 @@ const interpretLN=l=>{
   const p=[];
   if(dxF.length)p.push(`〔${l.dk}大限·忌神基调:${dxF.join('/')}〕`);
   if(dxJ.length)p.push(`〔${l.dk}大限·喜用基调:${dxJ.join('/')}〕`);
-  if(lf.length)p.push('流年应凶:'+lf.join('/'));
+  if(lf.length)p.push('流年应凶:'+lf.map(k=>{const e=empower('interpret',k+'凶');return k+'→'+e.transform;}).join('；'));
   if(lj.length)p.push('流年应吉:'+lj.join('/'));
   if(dxF.length&&lj.length)p.push('忌限逢喜年·吉气打折');
   if(dxJ.length&&lf.length)p.push('喜限逢忌年·凶势减轻');
