@@ -159,6 +159,15 @@ node scripts/gen_bazi_full_html.js 2000 8 16 14 30 男 1994 2080 "" workspace/_i
 ### Markdown（轻量，用于对话内或快速报告）
 同级标题分节，表格呈现流年/宫位，要点列表呈现建议。结尾附免责声明。
 
+### LLM 解读 JSON（`_interp`）生成指导（prompt 固化）
+`gen_*_full` 接收 `_interp` 解读 JSON（由 LLM 生成、命令行第 6/9 参数注入，注入后命书"命主总论/格局/宫象"等区块才有内容）。**生成 `_interp` 时遵循积极赋能四要点**：
+1. **双轨**：每条命理判断含 `judgment`（如实断，不粉饰）+ `transform`（转化路径）+ `action`（行动指引）+ `mindset`（心态），与 `data/empower.json` 条目结构一致。
+2. **积极基调**：凶象转"功课/守成期"、吉象转"顺势窗口"；禁凶吓（"必凶/死局/家破"），用"需注意/宜 X/课题在 X"。
+3. **引 empower.json**：查 `data/empower.json` 对应象（interpret/geju/palace_sihua/bazi_trait/dayun/liunian/heming）的转化语，保持口径一致；查不到走通用转化模板（`_empower.genericTransform`）。
+4. **结构**：`_interp = {命主身主, 格局, 五行局, 生年四化, 命主总论, 宫象:{各宫双轨}, 疾厄}` 等，每条双轨。
+
+> 注：gen 代码层已**机制化兜底**——即使 `_interp` 仅含 `judgment`，gen 的 `interpret`/`interpretLN` 会自动对凶查 `empower.interpret` 配转化；但 `_interp` 本身双轨更佳（命主总论/格局等 LLM 区块也积极）。
+
 ## 免责声明（固定文本，产出必附）
 
 > 本分析基于所提供的命盘/四柱数据，运用中国传统命理技法推演。命理学属于传统文化，**并非实证科学，不具备经过科学验证的预测能力**。所有吉凶判断、时间范围与建议，**仅适用于文化研究、自我觉察与娱乐参考，不能替代专业医疗诊断、心理咨询、法律意见、投资理财或婚姻决策**。命运由先天禀赋与后天选择共同塑造，理性看待、积极生活。如有实际困扰，请咨询专业持证人士。
