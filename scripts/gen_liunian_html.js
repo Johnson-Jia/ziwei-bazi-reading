@@ -24,7 +24,7 @@ const r=analyze(Y,Mo,D,H,MIN,gender,startYear,endYear);
 const c=r.chart;
 const byDy={};r.liunian.forEach(l=>{(byDy[l.dayun]=byDy[l.dayun]||[]).push(l);});
 const currentDy=(r.liunian.find(l=>l.year===2026)||{dayun:c.daYun[0]&&c.daYun[0].ganzhi}).dayun;
-const allData=JSON.stringify(r.liunian.map(l=>({y:l.year,dy:l.dayun,d:Object.fromEntries(DIMS.map(k=>[k,l.baziDims[k].score]))})));
+const allData=JSON.stringify(r.liunian.map(l=>{const badDims=DIMS.filter(k=>l.baziDims[k]&&l.baziDims[k].verdict==='凶');const em=badDims.length?badDims.map(k=>k+'→'+empower('interpret',k+'凶').transform).join('；'):'';return {y:l.year,dy:l.dayun,d:Object.fromEntries(DIMS.map(k=>[k,l.baziDims[k].score])),em};}));
 // ①大运卡: 年份年·岁数岁
 const dyCards=c.daYun.filter(d=>Number(d.ages.split('-')[1])<=100).map(d=>{const isNow=d.ganzhi===currentDy;const dm=DIMS.filter(k=>d.dims[k].verdict!=='平').map(k=>`<span class="mini ${d.dims[k].verdict}">${k}</span>`).join('');return `<div class="dy-card${isNow?' now':''}" data-dy="${esc(d.ganzhi)}" onclick="showDy('${esc(d.ganzhi)}')"><div class="dy-gz">${esc(d.ganzhi)}${isNow?'<span class="now-tag">当前</span>':''}</div><div class="dy-ya">${esc(d.years)}年 · ${esc(d.ages)}岁</div><div class="dy-mini">${dm||'<span class="mini 平">平</span>'}</div></div>`;}).join('');
 // ④流年竖向list(每流年一行)
@@ -88,7 +88,7 @@ function drawChart(items){
   const ticks=[-1,-.5,0,.5,1].map(m=>Math.round(maxAbs*m*10)/10);
   const grid=ticks.map(s=>'<line x1="'+pl+'" x2="'+(W-pr)+'" y1="'+(ym-s*ys).toFixed(1)+'" y2="'+(ym-s*ys).toFixed(1)+'" stroke="#eee"/><text x="'+(pl-3)+'" y="'+(ym-s*ys+3).toFixed(1)+'" font-size="8" text-anchor="end" fill="#999">'+s+'</text>').join('');
   const lines=series.map(([n,c,w,fn])=>'<polyline points="'+items.map((l,i)=>P(i,fn(l))).join(' ')+'" fill="none" stroke="'+c+'" stroke-width="'+w+'"/>').join('');
-  const dots=series.map(([n,c,w,fn])=>items.map((l,i)=>{const x=(pl+i*xs).toFixed(1),y=(ym-fn(l)*ys).toFixed(1),v=fn(l).toFixed(1),det=DN.map(d=>d+':'+(l.d[d]>0?'+':'')+l.d[d]).join(' ');return '<circle cx="'+x+'" cy="'+y+'" r="10" fill="'+c+'" fill-opacity="0" stroke="'+c+'" stroke-opacity="0" stroke-width="2" pointer-events="all" class="dot"><title>📅 '+l.y+'年 ['+n+']: '+v+' | '+det+'</title></circle>';}).join('')).join('');
+  const dots=series.map(([n,c,w,fn])=>items.map((l,i)=>{const x=(pl+i*xs).toFixed(1),y=(ym-fn(l)*ys).toFixed(1),v=fn(l).toFixed(1),det=DN.map(d=>d+':'+(l.d[d]>0?'+':'')+l.d[d]).join(' ');return '<circle cx="'+x+'" cy="'+y+'" r="10" fill="'+c+'" fill-opacity="0" stroke="'+c+'" stroke-opacity="0" stroke-width="2" pointer-events="all" class="dot"><title>📅 '+l.y+'年 ['+n+']: '+v+' | '+det+(l.em?'\\n💡 '+l.em:'')+'</title></circle>';}).join('')).join('');
   const xLab=items.map((l,i)=>'<text x="'+(pl+i*xs).toFixed(0)+'" y="'+(H-pb+11)+'" font-size="8" text-anchor="middle" fill="#999">'+l.y+'</text>').join('');
   const lg=series.map(([n,c])=>'<span style="color:'+c+';font-size:11px;margin:0 8px;font-weight:600">■'+n+'</span>').join('');
   area.innerHTML='<div style="text-align:center;margin:3px 0">'+lg+'</div><svg viewBox="0 0 '+W+' '+H+'" style="width:100%;background:#fafafa;border-radius:5px">'+grid+'<line x1="'+pl+'" x2="'+(W-pr)+'" y1="'+ym+'" y2="'+ym+'" stroke="#bbb"/>'+lines+dots+xLab+'</svg><div class="chart-tip" id="ctip" style="display:none"></div>';
