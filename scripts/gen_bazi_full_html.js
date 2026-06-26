@@ -303,14 +303,13 @@ section{background:#fff;border:1px solid var(--line);border-radius:8px;padding:1
 
 <section><div class="sec-title">三、命主深度解析（LLM 解读）</div>
 ${interpBlock || '<p class="empty">（未提供解读.json，解析区为空。命盘与运势已自动生成。）</p>'}
+${empowerSection}
 </section>
 
 <section><div class="chart-title">📊 逐年运势（主线默认展开 · 维度明细可折叠）</div><div id="chart-area"></div></section>
 
 <div class="dy-section" style="margin-bottom:12px"><h3 style="font-size:15px;color:#555;margin-bottom:7px">🔄 大运（${c.daYun.filter(d=>Number(d.ages.split('-')[1])<=100).length}步·到100虚岁·点击切换）</h3><div class="dy-row">${dyCards}</div></div>
 <div class="ly-section" style="margin-bottom:12px"><h3 style="font-size:15px;color:#555;margin-bottom:9px">📅 流年列表（竖向·十一维度·含食伤(艺)+大运基调叠加+解读）</h3>${dyPanels}</div>
-
-${empowerSection}
 
 <div class="disclaim"><b>⚠ 免责声明</b>：本命盘数据由 tyme4ts+关系层+神煞层 算法自动推算；解析部分为基于命理技法的大语言模型解读，标注依据与置信度。命理学属传统文化，<b>并非实证科学，不具备经科学验证的预测能力</b>。所有吉凶判断、时间范围与建议，<b>仅适用于文化研究、自我觉察与娱乐参考，不替代专业医疗/心理/法律/投资/婚姻决策</b>。理性看待、积极生活。</div>
 </div>
