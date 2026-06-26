@@ -7,6 +7,7 @@
  */
 const path = require('path'), fs = require('fs');
 const { ensureWorkspace } = require('./_workspace');
+const { lookup: empower } = require('./_empower');
 const WS = ensureWorkspace();
 const { astro } = require(path.join(__dirname, 'vendor/iztro/lib/index.js'));
 const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
@@ -20,7 +21,15 @@ const JI = new Set(_Z.JI_STAR);
 const SHA = new Set(_Z.SHA_STAR);
 const judgeDim = (a, y, pn) => _Z.judgeDim(a, y, pn, { weight: WEIGHT_FULL });
 const INTERP = {'财凶':'破财/收入波动;父辈耗','灾凶':'健康/血光/意外','子凶':'子女事谨慎;胎停(若孕育)','禄凶':'事业压力/变动','考吉':'学业/资质/深造;贵人','身凶':'过劳/精力降','身吉':'精力充沛/安顿','禄吉':'晋升/掌权','财吉':'得财/理财机遇','考凶':'学业受阻','友吉':'合作得力/担财','友凶':'竞争/劫财/口舌','妻凶':'感情波折','宅凶':'房产波折','父凶':'父辈健康/家耗'};
-const interpret = d => DIMS.map(([k]) => INTERP[k+d[k].verdict]).filter(Boolean).join('；');
+const interpret = d => DIMS.map(([k]) => {
+  const v = d[k].verdict, key = k + v;
+  const base = INTERP[key] || '';
+  if (v === '凶') {
+    const e = empower('interpret', key);
+    return [base, e.transform, e.action.join('/')].filter(Boolean).join('｜');
+  }
+  return base;
+}).filter(Boolean).join('；');
 // 流年LLM解读: 大限基调(十年环境) × 流年宫象(逐年) + 叠加提示(动态)
 const interpretLN=l=>{
   const dx=l.dxDims||{};
@@ -131,7 +140,11 @@ const interpGeju = (arr) => {
   const objs = arr.map(x => typeof x === 'string' ? {name:x, type:'good', desc:''} : x);
   const good = objs.filter(o => o.type !== 'caution' && o.type !== 'bad');
   const bad = objs.filter(o => o.type === 'caution' || o.type === 'bad');
-  const grp = (list, cls, icon, title) => list.length ? `<div class="geju-group ${cls}"><div class="geju-head">${icon} ${title}</div>${list.map(o=>`<div class="geju-item"><b>${esc(o.name)}</b>${o.desc?`：<span>${esc(o.desc)}</span>`:''}</div>`).join('')}</div>` : '';
+  const grp = (list, cls, icon, title) => list.length ? `<div class="geju-group ${cls}"><div class="geju-head">${icon} ${title}</div>${list.map(o => {
+    const e = (cls === 'gg-bad') ? empower('geju', o.name) : null;
+    const tail = e ? `<span class="geju-trans">→ ${e.transform}；宜:${e.action.join('/')}</span>` : '';
+    return `<div class="geju-item"><b>${esc(o.name)}</b>${o.desc?`：<span>${esc(o.desc)}</span>`:''}${tail}</div>`;
+  }).join('')}</div>` : '';
   return `<div class="ip-card geju"><h4>核心格局</h4>${grp(good,'gg-good','⭐','成格')}${grp(bad,'gg-bad','⚠','凶格警示')}</div>`;
 };
 // ② 疾厄脏腑定位（子午流注：地支宫→脏腑，脚本固定映射，不依赖 LLM）
@@ -143,16 +156,6 @@ const jieAllStars = jieGong ? [...(jieGong.majorStars||[]),...(jieGong.minorStar
 const jieRisk = [...jieAllStars.filter(s=>SHA_SET.has(s.name)).map(s=>s.name), ...(jieGong?(jieGong.majorStars||[]):[]).filter(s=>s.mutagen==='忌').map(s=>s.name+'化忌')];
 const zangfuCard = jieZhi ? `<div class="ip-card zangfu"><h4>疾厄·脏腑定位（子午流注）</h4><p>疾厄宫@<b>${esc(jieZhi)}</b>宫 → 主看 <b>${esc(ZANGFU[jieZhi]||'—')}</b>${jieRisk.length?`；该宫见 ${esc(jieRisk.join('、'))}，风险加重（防手术血光/慢性疾患）`:'；该宫无明显煞忌，风险较平'}。</p><p class="zangfu-tip">倪师正统以宫位地支定脏腑主轴，煞星/化忌加重风险，大限·流年飞到该宫为发病时间窗。</p></div>` : '';
 const legendCard = `<div class="ip-card legend"><h4>解读置信度图例</h4><p><span class="conf high">🟢高</span> 依据充分、较确定 ｜ <span class="conf mid">🟡中</span> 有依据、中等把握 ｜ <span class="conf low">🔴低</span> 弱关联/单一依据、仅供参考</p></div>`;
-const interpBlock = [
-  legendCard,
-  interpSec('命主身主 · 命宫格局', interp['命主身主']),
-  interpGeju(interp['格局']),
-  interpSec('五行局', interp['五行局']),
-  interpSec('生年四化', interp['生年四化']),
-  interpSec('命主总论', interp['命主总论']),
-  zangfuCard,
-].join('');
-const gongData = JSON.stringify(interp['宫象'] || {});
 
 const daXians = a.palaces.filter(p => p.decadal && p.decadal.range && p.decadal.range[1] <= 100).map(p => ({dk:p.decadal.heavenlyStem+p.decadal.earthlyBranch, years:(birthYear+p.decadal.range[0]-1)+'-'+(birthYear+p.decadal.range[1]-1), ages:p.decadal.range[0]+'-'+p.decadal.range[1], palace:p})).sort((x,y)=>parseInt(x.ages)-parseInt(y.ages));
 const data = [], byDy = {};
@@ -172,6 +175,40 @@ const currentDk = (data.find(l => l.year===2026) || {dk: daXians[0]?daXians[0].d
 const allData = JSON.stringify(data.map(l => ({y:l.year, ck:l.dk, d:Object.fromEntries(DIMS.map(([k])=>[k,l.dims[k].score]))})));
 const dyCards = daXians.map(d => { const isNow = d.dk===currentDk; const ms = (d.palace.majorStars||[]).map(s=>s.name).slice(0,2).join(' '); const pn = d.palace.name.endsWith('宫') ? d.palace.name : d.palace.name+'宫'; const jie = dxJie(d.dk); return `<div class="dy-card${isNow?' now':''}${jie?' has-jie':''}" data-dy="${esc(d.dk)}" onclick="showDy('${esc(d.dk)}')" title="${esc(jie)}"><div class="dy-gz">${esc(d.dk)}${isNow?'<span class="now-tag">当前</span>':''}${jie?'<span class="jie-tag">📖</span>':''}</div><div class="dy-ya">${esc(d.years)}年 · ${esc(d.ages)}岁</div><div class="dy-palace">${esc(pn)}@${esc(d.palace.earthlyBranch)} ${esc(ms)||'空'}</div></div>`; }).join('');
 const dyPanels = daXians.map(d => { const lys = byDy[d.dk]||[]; const rows = lys.map(l => { const lText = lyJie(l.year) ? `🔮 ${esc(lyJie(l.year))}` : `🔮 ${esc(interpretLN(l))}`; return `<div class="ly-row"><span class="ly-year">${l.year}</span><span class="ly-gz">${esc(l.taiSui)}</span><span class="ly-branch">流命@${esc(l.liuMing)}</span><span class="mutagen">${esc(l.mutagen)}</span><span class="dim-row">${DIMS.map(([k])=>`<span class="dim-badge d-${l.dims[k].verdict}">${k}</span>`).join('')}</span></div><div class="ly-interp">${lText}</div>`; }).join(''); return `<div class="dy-panel" id="panel-${esc(d.dk)}">${rows||'<p class="empty">该大限范围外(无流年数据)</p>'}</div>`; }).join('');
+
+// ③ 积极引导专区(知己禀赋 + 顺势功课 + 行动指南)——赋能层产出表达,推演层零改动
+function renderEmpower() {
+  const mingGong = a.palaces.find(p => p.name === '命宫');
+  const guanGong = a.palaces.find(p => p.name === '官禄');
+  const mingStars = (mingGong.majorStars || []).map(s => s.name).join('·') || '空宫';
+  const guanStars = (guanGong.majorStars || []).map(s => s.name).join('·') || '空宫';
+  const zhiJi = `命宫${mingStars}、官禄${guanStars}——禀赋在技术/专业,适合深耕立身。`;
+  const curDy = daXians.find(d => d.dk === currentDk);
+  // 当前大限凶象统计:取该 dk 流年的 dxDims(大限基调)中"凶"的维度数(daXians 项无 dims,从 data 流年聚合)
+  const curDyLys = data.filter(l => l.dk === currentDk);
+  const dyBadCnt = curDyLys.length ? DIMS.filter(([k]) => curDyLys.some(l => l.dxDims[k] && l.dxDims[k].verdict === '凶')).length : 0;
+  const dyKey = dyBadCnt > 3 ? '财官忌运' : '食伤喜运';
+  const shunShi = empower('dayun', dyKey);
+  const xingDong = empower('bazi_trait', '身弱财多');
+  return `<section class="empower">
+    <div class="sec-title">🌞 积极引导 · 顺势而为</div>
+    <div class="empower-card"><h4>知己 · 禀赋扬长</h4><p>${esc(zhiJi)}</p></div>
+    <div class="empower-card"><h4>顺势 · 节奏功课</h4><p><b>${esc(currentDk)}大限</b>:${esc(shunShi.judgment)}</p><p>转化:${esc(shunShi.transform)}</p><p>宜:${esc(shunShi.action.join('、'))}</p></div>
+    <div class="empower-card"><h4>行动 · 避坑指南</h4><p>${esc(xingDong.transform)}</p><p>宜:${esc(xingDong.action.join('、'))}</p><p class="mindset">${esc(xingDong.mindset)}</p></div>
+  </section>`;
+}
+
+const interpBlock = [
+  legendCard,
+  interpSec('命主身主 · 命宫格局', interp['命主身主']),
+  interpGeju(interp['格局']),
+  interpSec('五行局', interp['五行局']),
+  interpSec('生年四化', interp['生年四化']),
+  interpSec('命主总论', interp['命主总论']),
+  zangfuCard,
+  renderEmpower(),
+].join('');
+const gongData = JSON.stringify(interp['宫象'] || {});
 
 const html = `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>紫微命书·${esc(dateStr)}</title>
@@ -263,6 +300,13 @@ section{background:rgba(255,253,247,.6);border:1px solid var(--line);border-radi
 #chart-area{position:relative;min-height:100px}
 .disclaim{background:#3a2f22;color:#e8dcc2;padding:13px;border-radius:8px;font-size:13px;line-height:1.75;border-left:4px solid var(--v);margin-top:12px}
 .disclaim b{color:#f0c674}
+.empower{background:linear-gradient(135deg,rgba(63,107,78,.06),rgba(154,122,46,.06));border:1px solid var(--jade);border-radius:8px;padding:14px;margin-bottom:12px}
+.empower .sec-title{color:var(--jade);border-left:4px solid var(--jade)}
+.empower-card{background:rgba(255,253,247,.7);border:1px solid var(--line);border-radius:6px;padding:10px 12px;margin-top:8px}
+.empower-card h4{color:var(--jade);font-size:15px;margin-bottom:4px}
+.empower-card p{font-size:13.5px;color:var(--ink2);line-height:1.7;margin:2px 0}
+.empower-card .mindset{color:var(--gold);font-style:italic;font-size:12.5px}
+.geju-trans{color:var(--jade);font-size:12.5px;margin-left:4px}
 </style></head><body><div class="wrap">
 <header><h1>紫微斗数命书 · 完整命盘详批</h1>
 <div class="sub">${esc(dateStr)} 戌时 ${gender} · ${esc(a.fiveElementsClass||'')} · 命宫@${mingGong?mingGong.earthlyBranch:'?'} <b>${mingGong?(mingGong.majorStars||[]).map(s=>s.name).join(''):''}</b></div></header>
