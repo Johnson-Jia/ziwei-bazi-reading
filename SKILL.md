@@ -37,6 +37,8 @@ description: "Use when the user asks for 紫微斗数 / Zi Wei Dou Shu chart rea
 
 8. **趋吉避凶·正向引导（产出口径·机制化）**：命理旨在给人希望与出路，非堆砌凶象。吉凶按原理如实推演，但解析必须给"转化路径"——凶运指出该往哪发力、为喜用运蓄什么力（婚姻凶转攻事业、财运凶深耕技术韬光养晦、官杀凶以技术学识化杀），**每个凶配一条出路**；禁绝对化与凶吓表述（用"需注意/宜 X"替代"大凶/必破"）。详见 `methods/bazi-method.md` 第十五节 与 `methods/ziwei-method.md` 第十一节。**机制化落实**：`data/empower.json` 积极赋能语料层（7 类：`interpret`/`geju`/`palace_sihua`/`bazi_trait`/`dayun`/`liunian`/`heming`）提供每条象的 `{judgment(如实断)+transform(转化)+action[](行动)+mindset(心态)}`，`scripts/_empower.js` 的 `lookup(category,key)` 供 `gen_*.js` 与 LLM prompt 查询；**所有 gen 产出对每个凶/特质/运势节点必须查 empower 配出路**，查不到走通用转化模板兜底。详见 `docs/specs/2026-06-26-积极赋能改造-design.md`。
 
+9. **定盘多维度合参·应事三层引动**：定盘须综合人生经历多维度（学业/财运烈度/职业）+ 本人特征（体貌/六亲/健康），**禁凭单一事件/单一宫位下定盘结论**（印星有根是学业/技术/扛财的根本）。应事须看**原局（体）+ 大限 + 流年三层引动**（流年走宫/化忌入主星/害刑动六亲星），单看原局宫位会误判（如原局子女宫吉不排除流年化忌破）。详见 `methods/dingpan-logic.md`。
+
 ## 标准推演流程
 
 ```dot
