@@ -36,3 +36,6 @@ workspace-*/
 # 设计/计划文档(本地用,不入库)
 docs/specs/
 docs/plans/
+
+# 命主个人档案(隐私,仅本地,严禁入库)
+docs-private/
