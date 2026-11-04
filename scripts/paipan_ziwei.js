@@ -4,6 +4,11 @@
  *
  * 用法:
  *   node paipan_ziwei.js <公历日期 YYYY-M-D> <时辰0-12> <男|女> [闰月true|false] [语言]
+ *   可选 flag(真太阳时校正,见 solar_time.js):
+ *     --clock HH:MM   出生钟表时刻(如 21:30)
+ *     --lon 东经度数   出生地经度(如 113.65) 或 --city 城市名(如 郑州,查内置简表)
+ *   提供钟表时刻时: 判定夏令时(仅提示)+按经度做真太阳时校正;时辰若被校正改变,
+ *   醒目警告并按校正后时辰排盘(填出生地即校正,与主流排盘口径一致)。
  *   无参数时: 演示(通用示例) 2000-08-16 戌时(10) 男
  *
  * 时辰序号 (CHINESE_TIME):
@@ -27,16 +32,54 @@ const IZTRO_LIB = process.env.IZTRO_LIB || path.join(__dirname, 'vendor/iztro/li
 const { astro } = require(IZTRO_LIB);
 
 // ===== 解析命令行 =====
+// 位置参数: <日期> <时辰0-12> <男|女> [闰月] [语言]
+// 可选 flag: --clock HH:MM / --lon 度数 / --city 城市名 (真太阳时校正)
 const argv = process.argv.slice(2);
+let flagClock = null, flagLon, flagCity;
+const positional = [];
+for (let i = 0; i < argv.length; i++) {
+  const a = argv[i];
+  if (a === '--clock') { flagClock = argv[++i]; continue; }
+  if (a === '--lon') { flagLon = argv[++i]; continue; }
+  if (a === '--city') { flagCity = argv[++i]; continue; }
+  if (a.startsWith('--')) continue;
+  positional.push(a);
+}
+
 let dateStr, timeIdx, gender, isLeap, lang;
-if (argv.length >= 3) {
-  [dateStr, timeIdx, gender, isLeap = 'true', lang = 'zh-CN'] = argv;
+if (positional.length >= 3) {
+  [dateStr, timeIdx, gender, isLeap = 'true', lang = 'zh-CN'] = positional;
   timeIdx = Number(timeIdx);
   isLeap = String(isLeap) === 'true';
 } else {
   // 默认演示: 命主 2000-08-16 戌时
   dateStr = '2000-08-16'; timeIdx = 10; gender = '男'; isLeap = true; lang = 'zh-CN';
   console.error('[demo] 未提供参数，使用演示(通用示例) 2000-08-16 戌时 男。参数用法见文件头注释。');
+}
+
+// ===== 真太阳时校正(可选: 提供 --clock 时启用) =====
+let trueSolarTime = null;
+if (typeof flagClock === 'string' && /^\d{1,2}:\d{2}$/.test(flagClock)) {
+  const { resolveBirthTime, shiftGregorianDate } = require('./solar_time');
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const [ch, cm] = flagClock.split(':').map(Number);
+  const bt = resolveBirthTime({
+    year: y, month: m, day: d, hour: ch, minute: cm,
+    longitude: flagLon !== undefined ? Number(flagLon) : undefined,
+    cityName: flagCity,
+  });
+  trueSolarTime = bt;
+  console.error('[真太阳时] ' + bt.summary);
+  if (bt.dst.isDST) console.error('[夏令时⚠] ' + bt.dst.note);
+  if (bt.timeChanged) {
+    console.error(`[时辰改变⚠] 钟表${bt.clockBranchName}时 → 真太阳${bt.branchName}时,按校正后【${bt.branchName}时】排盘。`);
+    timeIdx = bt.iztroTimeIndex;
+  }
+  if (bt.solar.dayOffset !== 0) {
+    const shifted = shiftGregorianDate({ year: y, month: m, day: d }, bt.solar.dayOffset);
+    dateStr = `${shifted.year}-${shifted.month}-${shifted.day}`;
+    console.error(`[跨日⚠] 真太阳时跨日(dayOffset=${bt.solar.dayOffset}),排盘日期改为 ${dateStr}。`);
+  }
 }
 
 // ===== 排盘 =====
@@ -87,6 +130,7 @@ const result = {
     bodyPalace: a.earthlyBranchOfBodyPalace,          // 身宫地支
   },
   palaces,
+  trueSolarTime,                                   // 真太阳时校正详情(null=未启用; 见 scripts/solar_time.js)
   _note: '来因宫为钦天门技法，iztro 默认不输出，推演时按年干手动定位（见 methods/ziwei-method.md）。宫干飞化/自化可用 iztro 链式 API (palace.fliesTo/selfMutaged/hasMutagen) 进一步查询，本脚本仅输出静态盘+生年四化。',
 };
 

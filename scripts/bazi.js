@@ -7,7 +7,9 @@
  *   自研2 shensha.js        (← china-testing/bazi/datas.py)  — 15命局神煞(孤辰寡宿/天月德/将星华盖驿马/天乙文昌羊刃红艳…)
  *
  * 用法:
- *   node bazi.js <YYYY> <M> <D> <H> <MIN> <男|女>
+ *   node bazi.js <YYYY> <M> <D> <H> <MIN> <男|女> [--lon 东经度数 | --city 城市名]
+ *   可选真太阳时校正(见 solar_time.js): 提供 --lon/--city 时,先判定夏令时(仅提示),
+ *   再按 经度修正+均时差 校正为真太阳时后排盘(时辰若被改变会醒目警告;跨日自动偏移)。
  *   无参数: 演示(通用示例) 2000-08-16 14:30 男
  *   (tyme4ts 用精确时分自动定子时早晚，无需手填时辰序号)
  *
@@ -30,12 +32,45 @@ const { kongWang } = require('./bazi_core');   // 旬空(空亡)算法
 
 // ===== 解析命令行 =====
 const argv = process.argv.slice(2);
+// 可选 flag: --lon 度数 / --city 城市名 (真太阳时校正)
+let flagLon, flagCity;
+const pos = [];
+for (let i = 0; i < argv.length; i++) {
+  const a = argv[i];
+  if (a === '--lon') { flagLon = argv[++i]; continue; }
+  if (a === '--city') { flagCity = argv[++i]; continue; }
+  if (a.startsWith('--')) continue;
+  pos.push(a);
+}
 let Y, Mo, D, H, MIN, gender;
-if (argv.length >= 6) {
-  [Y, Mo, D, H, MIN, gender] = argv.map((x, i) => (i < 5 ? Number(x) : x));
+if (pos.length >= 6) {
+  [Y, Mo, D, H, MIN, gender] = pos.map((x, i) => (i < 5 ? Number(x) : x));
 } else {
   Y = 2000; Mo = 8; D = 16; H = 14; MIN = 30; gender = '男';
   console.error('[demo] 未提供参数，使用演示(通用示例) 2000-08-16 14:30 男。用法见文件头注释。');
+}
+
+// ===== 真太阳时校正(可选: 提供 --lon/--city 时启用; 时分即钟表读数) =====
+let solarTimeBlock = null;
+if (flagLon !== undefined || flagCity !== undefined) {
+  const { resolveBirthTime, shiftGregorianDate } = require('./solar_time');
+  const bt = resolveBirthTime({
+    year: Y, month: Mo, day: D, hour: H, minute: MIN,
+    longitude: flagLon !== undefined ? Number(flagLon) : undefined,
+    cityName: flagCity,
+  });
+  solarTimeBlock = bt;
+  console.error('[真太阳时] ' + bt.summary);
+  if (bt.dst.isDST) console.error('[夏令时⚠] ' + bt.dst.note);
+  if (bt.timeChanged) {
+    console.error(`[时辰改变⚠] 钟表${bt.clockBranchName}时 → 真太阳${bt.branchName}时,按校正后时刻排盘。`);
+  }
+  if (bt.solar.dayOffset !== 0) {
+    const sd = shiftGregorianDate({ year: Y, month: Mo, day: D }, bt.solar.dayOffset);
+    Y = sd.year; Mo = sd.month; D = sd.day;
+    console.error(`[跨日⚠] 真太阳时跨日(dayOffset=${bt.solar.dayOffset}),排盘日期改为 ${Y}-${Mo}-${D}。`);
+  }
+  H = bt.solar.hour; MIN = bt.solar.minute; // tyme4ts 按校正后时分自动定早/晚子
 }
 const G = (gender === '男' || gender === 'man' || gender === 'M') ? Gender.MAN : Gender.WOMAN;
 
@@ -93,6 +128,7 @@ const result = {
     _note: '起运岁按虚岁记 = 实年换算(出生虚岁1,每过农历年+1);见 data/jieqi.json 的换算案例',
   },
   daYun,                                          // startAge/endAge 为虚岁
+  solarTime: solarTimeBlock,                      // 真太阳时校正详情(null=未启用; 见 scripts/solar_time.js)
   relations: {
     zhi: analyzeZhiRelations(cyc.map((c, i) => [nm[i], c.getEarthBranch().getName()])),
     gan: analyzeGanRelations(cyc.map((c, i) => [nm[i], c.getHeavenStem().getName()])),

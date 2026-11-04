@@ -25,7 +25,9 @@
 ```bash
 node scripts/paipan_ziwei.js                            # 演示(通用示例) 2000-08-16 戌时 男
 node scripts/paipan_ziwei.js 2000-8-16 2 女 true zh-CN  # 任意(参数: 日期 时辰0-12 性别 闰月 语言)
+node scripts/paipan_ziwei.js 1993-10-20 11 男 --clock 21:30 --city 上海  # 真太阳时校正(可选)
 ```
+- **真太阳时校正(可选 flag)**：`--clock HH:MM`(出生钟表时刻) + `--lon 度数`或`--city 城市名`——按 经度修正+NOAA均时差 校正,时辰被改变时醒目警告并按校正后排盘;判定 1986-91 夏令时(仅提示不自动减)。实现见 `solar_time.js`(移植自 ziwei-doushu/MIT)。
 - 时辰序号：0早子…10戌…12晚子
 - 输出：四柱/五行局/命主身主/十二宫(主星亮度四化/辅星小星/宫干/大限/小限/长生)
 
@@ -33,6 +35,7 @@ node scripts/paipan_ziwei.js 2000-8-16 2 女 true zh-CN  # 任意(参数: 日期
 
 ```bash
 node scripts/bazi.js                          # 演示(通用示例) 2000-08-16 14:30 男
+node scripts/bazi.js 1991 10 28 18 30 女 --city 郑州  # 真太阳时校正(可选 --lon/--city,时分为钟表读数)
 node scripts/bazi.js 1985 10 15 14 30 男      # 任意(参数: 年 月 日 时 分 性别; tyme4ts按精确时分自动定时辰)
 ```
 - 三层架构：**tyme4ts**（四柱/十神/藏干/地势/胎元命宫身宫/精确节气起运/大运）+ **bazi_relations**（三合/六合/冲/刑/害/破/天干合冲）+ **shensha**（15 命局神煞）
